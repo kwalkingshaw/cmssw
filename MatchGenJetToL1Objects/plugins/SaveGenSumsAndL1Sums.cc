@@ -4,7 +4,7 @@
 // Class:      SaveGenSumsAndL1Sums
 // 
 /**\class SaveGenSumsAndL1Sums SaveGenSumsAndL1Sums.cc caloJetConvolutionCurves/SaveGenSumsAndL1Sums/plugins/SaveGenSumsAndL1Sums.cc
- Description: Matches a gen jet with a L1T object and creates a tree
+ Description: Creates a tree that saves generator-level and trigger-level sums
  Implementation:
     Receives tags of the various L1T objects
 */
@@ -71,27 +71,37 @@ class SaveGenSumsAndL1Sums : public edm::one::EDAnalyzer<edm::one::SharedResourc
     void _freeTokens();
     double _computeHT(const std::vector<reco::GenJet>& jetVector);
 
+    //tag of the generator-level met
     edm::EDGetTokenT< std::vector< reco::GenMET > > *_genMETCollectionTag;
+    //tag of the trigger-level met
     edm::EDGetTokenT< BXVector<l1t::EtSum> > *_l1tMETCollectionTag;
-    
+    //tag of the generator-level jets HT and MHT can be computed from
     edm::EDGetTokenT< std::vector< reco::GenJet > > *_genJetCollectionTag;
+    //tag of the trigger-level ht
     edm::EDGetTokenT< BXVector<l1t::EtSum> > *_l1tHTCollectionTag;
     
+    //TTree holding gen-l1t MET pairs
     TTree * _genMETL1TMETTree;
+    //TTree holding gen-l1t HT pairs
     TTree * _genHTL1THTTree;
 
+    //memory area where to store gen and l1t sums before saving them into the tree
     float _genMET, _l1tMET, _genHT, _l1tHT;
     
     double _htPtThreshold;
 
 };
 
+//Obtains the token to access the inputs, initialises the TTree based on inputs
 SaveGenSumsAndL1Sums::SaveGenSumsAndL1Sums(const edm::ParameterSet& iConfig)
 {  
+  //obtaining the tokens to access the input data
   this -> _getTokens(iConfig);
+  //accessing the file where the TTrees will be saved to
   usesResource("TFileService");
   edm::Service<TFileService> fs;
 
+  //Creating a TTree where to save gen-l1t MET, if I have received the MET tags
   if ((this -> _genMETCollectionTag) && (this -> _l1tMETCollectionTag))
   {
     this -> _genMETL1TMETTree = fs -> make<TTree>("genMETL1TMETTree", "TTree with generator-level / L1T MET information");
@@ -99,6 +109,7 @@ SaveGenSumsAndL1Sums::SaveGenSumsAndL1Sums(const edm::ParameterSet& iConfig)
     this -> _genMETL1TMETTree -> Branch("l1tMET", &(this -> _l1tMET), "l1TMET/F");
   }
   
+  //Creating a TTree where to save gen-l1t HT, if I have received the MHT tag and the gen-jet tag required to compute it
   if ((this -> _genJetCollectionTag) && (this -> _l1tHTCollectionTag))
   {
     this -> _genHTL1THTTree = fs -> make<TTree>("genHTL1THTTree", "TTree with generator-level / L1T HT information");
@@ -106,6 +117,12 @@ SaveGenSumsAndL1Sums::SaveGenSumsAndL1Sums(const edm::ParameterSet& iConfig)
     this -> _genHTL1THTTree -> Branch("l1tHT", &(this -> _l1tHT), "l1tHT/F");
   }
 }
+
+
+// obtains tokens to access data in the input CMSSW file if they are present
+
+//the "try" statement tries to access the inputtag, if that fails the block in the catch statement gets executed
+//I use this mechanism to create optional parameters
 
 void SaveGenSumsAndL1Sums::_getTokens(const edm::ParameterSet& iConfig)
 {
@@ -159,6 +176,7 @@ void SaveGenSumsAndL1Sums::_getTokens(const edm::ParameterSet& iConfig)
   return;
 }
 
+//liberating the memory area held by the tokens
 void SaveGenSumsAndL1Sums::_freeTokens()
 {
   if (this -> _genMETCollectionTag) delete this -> _genMETCollectionTag;
@@ -182,37 +200,47 @@ SaveGenSumsAndL1Sums::~SaveGenSumsAndL1Sums()
 void
 SaveGenSumsAndL1Sums::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
-  // I want to save for each event the highest momentum l1t(Muon/EGamma/Tau/Jet) for performance purposes
-  
+  //for each event I check if I am supposed to save MET by looking up if the tokens are properly initialised (i.e. not NULL)
+  //if they are properly initialised I store the gen met and l1t met in the variables that will be than pushed to the TTree
   if ((this -> _genMETCollectionTag) && (this -> _l1tMETCollectionTag))
   {
+    //token are initialised, I use them to access the data
     edm::Handle < std::vector< reco::GenMET> > lGenMETCollectionHandle;
     edm::Handle < BXVector<l1t::EtSum> > lL1TMETCollectionHandle;
     iEvent.getByToken(*(this -> _genMETCollectionTag), lGenMETCollectionHandle);
     iEvent.getByToken(*(this -> _l1tMETCollectionTag), lL1TMETCollectionHandle);
-    //access gen and l1t met data
+    // retrieving gen MET and saving it to the genMet memory area
     this -> _genMET = lGenMETCollectionHandle -> front().pt();
+    // retrieving sums
     const BXVector<l1t::EtSum> & lL1TMETCollection = *lL1TMETCollectionHandle;
+    // looking up the sum containing the MET and storing it to the l1tMet memory area
     for (const l1t::EtSum & lL1TMET: lL1TMETCollection) if (lL1TMET.getType() == l1t::EtSum::EtSumType::kMissingEt) this -> _l1tMET = lL1TMET.pt();
+    // pushing the gen-l1t MET to the tree
     this -> _genMETL1TMETTree -> Fill();
   }
 
+  //checking if the HT tokens are initialised (I require the l1tHT token and the genJet collection that I will use to compute the genHT)
   if ((this -> _genJetCollectionTag) && (this -> _l1tHTCollectionTag))
   {
+    //tokens are initialised, accessing the data
     edm::Handle < std::vector< reco::GenJet> > lGenJetCollectionHandle;
     edm::Handle < BXVector<l1t::EtSum> > lL1THTCollectionHandle;
     iEvent.getByToken(*(this -> _genJetCollectionTag), lGenJetCollectionHandle);
     iEvent.getByToken(*(this -> _l1tHTCollectionTag), lL1THTCollectionHandle);
     // access l1t HT data 
     const BXVector<l1t::EtSum> & lL1THTCollection = *lL1THTCollectionHandle;
+    // looking up the sum containing the l1tHET and storing it in the l1tMHT memory area
     for (const l1t::EtSum & lL1THT: lL1THTCollection) if (lL1THT.getType() == l1t::EtSum::EtSumType::kTotalHt) this -> _l1tHT = lL1THT.pt();
-    // compute gen HT
+    // computing gen HT
     this -> _genHT = this -> _computeHT(*lGenJetCollectionHandle);
+    //pushing gen-l1t ht to the tree
     this -> _genHTL1THTTree -> Fill();
   }
 
 }
 
+// computes the genHT starting from the gen jet collection
+// i loop over every gen jet and sum the pt to the total HT of the event if their momentum is above the htPtThreshold
 double SaveGenSumsAndL1Sums::_computeHT(const std::vector<reco::GenJet>& jetVector) 
 {
   double lHT = 0;
