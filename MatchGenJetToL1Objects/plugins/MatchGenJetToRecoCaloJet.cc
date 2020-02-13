@@ -208,7 +208,8 @@ MatchGenJetToRecoCaloJet::analyze(const edm::Event& iEvent, const edm::EventSetu
     for (auto caloJetIterator = caloJetCollectionHandle -> begin(); caloJetIterator != caloJetCollectionHandle -> end(); caloJetIterator++ )
     {
       // Only barrel leading l1t jets
-      if ((caloJetIterator->pt() > maxPt) && (caloJetIterator->eta() < 1.44) && (caloJetIterator->eta() > -1.44))
+      // if ((caloJetIterator->pt() > maxPt) && (caloJetIterator->eta() < 1.44) && (caloJetIterator->eta() > -1.44))
+      if ((caloJetIterator->pt() > maxPt))
       {
         save = true;        
         maxPt = caloJetIterator -> pt();
