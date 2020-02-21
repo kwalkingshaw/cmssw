@@ -60,6 +60,7 @@ class Phase1L1TSumsProducer : public edm::one::EDProducer<edm::one::SharedResour
       l1t::EtSum _computeHT(const std::vector<reco::CaloJet>& l1jetVector);
       template <class ParticleCollection>
       l1t::EtSum _computeMET(const ParticleCollection & caloGrid);
+      l1t::EtSum _computeMHT(const std::vector<reco::CaloJet>& l1jetVector);
 
       edm::EDGetTokenT<edm::View<reco::Candidate>> *_particleCollectionTag;
       edm::EDGetTokenT<std::vector<reco::CaloJet> > *_jetCollectionTag;
@@ -130,12 +131,15 @@ void Phase1L1TSumsProducer::produce(edm::Event& iEvent, const edm::EventSetup& i
   // computing sums and storing them in sum object
   l1t::EtSum lHT = this -> _computeHT(*jetCollectionHandle);
   l1t::EtSum lMET = this -> _computeMET<>(*particleCollectionHandle);
+  l1t::EtSum lMHT = this -> _computeMHT(*jetCollectionHandle);
 
   //packing sums in BXVector for event saving
   std::unique_ptr< BXVector<l1t::EtSum> > lSumVectorPtr(new BXVector<l1t::EtSum>(2));
   lSumVectorPtr -> push_back(0, lHT);
   lSumVectorPtr -> push_back(0, lMET);
+  lSumVectorPtr -> push_back(0, lMHT);
   // std::cout << "HT-MET sums prod: " << lHT.pt() << "\t" << lMET.pt() << std::endl;
+  std::cout << "MET-MHT sums prod: " << lMET.pt() << "\t" << lMHT.pt() << std::endl;
   //saving sums
   iEvent.put(std::move(lSumVectorPtr), this -> _outputCollectionName);
 
@@ -201,6 +205,48 @@ l1t::EtSum Phase1L1TSumsProducer::_computeMET(const ParticleCollection & particl
   l1t::EtSum lMETSum(lMETVector, l1t::EtSum::EtSumType::kMissingEt);
 
   return lMETSum;
+
+}
+
+// computes MHT
+// adds jet pt to mht only if the pt of the jet is above the mht calculation threshold
+l1t::EtSum Phase1L1TSumsProducer::_computeMHT(const std::vector<reco::CaloJet>& l1jetVector)
+{
+  
+  double lTotalJetPx = 0;
+  double lTotalJetPy = 0;
+  
+  
+
+  for (const auto & jet: l1jetVector)
+  { 
+    double lJetPhi = jet.phi();
+
+    if ((lJetPhi < this -> _phiLow) || (lJetPhi > this -> _phiUp)) continue;
+
+    unsigned int iPhi = ( lJetPhi - this -> _phiLow ) / this -> _phiStep;
+
+    // retrieving sin cos from LUT emulator
+    double lSinPhi = this -> _sinPhi[iPhi];
+    double lCosPhi = this -> _cosPhi[iPhi];
+    
+   
+    // checking if above threshold
+    lTotalJetPx += (jet.pt() >= this -> _htPtThreshold) ? jet.pt() * lCosPhi: 0;
+    lTotalJetPy += (jet.pt() >= this -> _htPtThreshold) ? jet.pt() * lSinPhi: 0;
+  }
+
+  double lMHT = sqrt(lTotalJetPx * lTotalJetPx + lTotalJetPy * lTotalJetPy);
+
+  reco::Candidate::PolarLorentzVector lMHTVector;
+  lMHTVector.SetPt(lMHT);
+  lMHTVector.SetEta(0);
+  lMHTVector.SetPhi(0);
+
+  // kTotalMHT the the EtSum enumerator type for the MHT
+  l1t::EtSum lMHTSum(lMHTVector, l1t::EtSum::EtSumType::kMissingHt);
+
+  return lMHTSum;
 
 }
 
