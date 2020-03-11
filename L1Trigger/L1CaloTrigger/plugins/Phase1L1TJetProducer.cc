@@ -157,17 +157,17 @@ void Phase1L1TJetProducer::produce(edm::Event& iEvent, const edm::EventSetup& iS
     // dumping the data
     this -> _fillCaloGrid<>(lCaloGrid, *inputCollectionHandle);
 
-    //int nBinsX = lCaloGrid -> GetNbinsX();
-    //int nBinsY = lCaloGrid -> GetNbinsY();
-    //for (int iPhi = 1; iPhi <= nBinsY; iPhi++)
-    //{
-      // std::cout << "iPhi " << iPhi - 1 << " " << lCaloGrid -> GetYaxis() -> GetBinCenter(iPhi) << ": ";
-      //for (int iEta = 1; iEta <= nBinsX; iEta++)
-      //{
-        // std::cout <<lCaloGrid -> GetBinContent(iEta, iPhi) << " ";
-      //}
-      // std::cout << std::endl;
-    //}
+    // int nBinsX = lCaloGrid.GetNbinsX();
+    // int nBinsY = lCaloGrid.GetNbinsY();
+    // for (int iPhi = 1; iPhi <= nBinsY; iPhi++)
+    // {
+    //   std::cout << "iPhi " << iPhi - 1 << " " << lCaloGrid.GetYaxis() -> GetBinCenter(iPhi) << ": ";
+    //   for (int iEta = 1; iEta <= nBinsX; iEta++)
+    //   {
+    //     std::cout <<lCaloGrid.GetBinContent(iEta, iPhi) << " ";
+    //   }
+    //   std::cout << std::endl;
+    // }
     const auto seedsVector = this -> _findSeeds(lCaloGrid, this -> _seedPtThreshold); // seedPtThreshold = 6
     std::vector<reco::CaloJet> l1jetVector;
     if (this -> _puSubtraction)

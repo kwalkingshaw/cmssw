@@ -7,9 +7,13 @@ from L1Trigger.L1CaloTrigger.Phase1L1TJetProducer_cfi import Phase1L1TJetProduce
 process = cms.Process("TEST")
 
 process.load("FWCore.MessageService.MessageLogger_cfi")
+<<<<<<< HEAD
 process.MessageLogger.cerr.FwkReport.reportEvery = 10
+=======
+process.MessageLogger.cerr.FwkReport.reportEvery = 1
+>>>>>>> simonecid/sums_devel
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100))
 
 process.source = cms.Source("PoolSource",
   fileNames = cms.untracked.vstring("file:/eos/cms/store/cmst3/group/l1tr/gpetrucc/106X/NewInputs104X/240719_oldhgc.done/TTbar_PU200/inputs104X_1.root"),
@@ -41,8 +45,8 @@ process.Phase1L1TJetProducer = cms.EDProducer('Phase1L1TJetProducer',
   nBinsPhi = cms.uint32(8),
   phiLow = cms.double(0),
   phiUp = cms.double(0.7),
-  jetIEtaSize = cms.uint32(5),
-  jetIPhiSize = cms.uint32(5),
+  jetIEtaSize = cms.uint32(7),
+  jetIPhiSize = cms.uint32(7),
   seedPtThreshold = cms.double(5), # GeV
   puSubtraction = cms.bool(False),
   outputCollectionName = cms.string("UncalibratedPhase1L1TJetFromPfCandidates"),
@@ -60,6 +64,8 @@ process.Phase1L1TSumsProducer = cms.EDProducer('Phase1L1TSumsProducer',
   nBinsPhi = cms.uint32(8),
   phiLow = cms.double(0),
   phiUp = cms.double(0.7),
+  etaLow = cms.double(0),
+  etaUp = cms.double(1.5),
   sinPhi = sinPhi,
   cosPhi = cosPhi,
   htPtThreshold = cms.double(30),
