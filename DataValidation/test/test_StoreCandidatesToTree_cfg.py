@@ -1,7 +1,5 @@
 import FWCore.ParameterSet.Config as cms
 import FWCore.Utilities.FileUtils as FileUtils # ADDED
-from L1Trigger.L1CaloTrigger.ComputeUncalibratedPhase1AndAK4L1TJetsFromPfCandidates_10_0_4_MTD_AK4Jets_CalibrationFactors import calibration as AK4L1TJetCalibration 
-from L1Trigger.L1CaloTrigger.ComputeUncalibratedPhase1AndAK4L1TJetsFromPfCandidates_10_0_4_MTD_7x7Jets_CalibrationFactors import calibration as Phase1L1TJetCalibration_7x7
 process = cms.Process("MATCH")
 
 process.load("FWCore.MessageService.MessageLogger_cfi")
