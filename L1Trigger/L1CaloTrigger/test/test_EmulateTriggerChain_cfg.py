@@ -7,11 +7,7 @@ from L1Trigger.L1CaloTrigger.Phase1L1TJetProducer_cfi import Phase1L1TJetProduce
 process = cms.Process("TEST")
 
 process.load("FWCore.MessageService.MessageLogger_cfi")
-<<<<<<< HEAD
 process.MessageLogger.cerr.FwkReport.reportEvery = 10
-=======
-process.MessageLogger.cerr.FwkReport.reportEvery = 1
->>>>>>> simonecid/sums_devel
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100))
 
