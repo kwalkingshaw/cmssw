@@ -3,14 +3,16 @@ import FWCore.Utilities.FileUtils as FileUtils # ADDED
 process = cms.Process("MATCH")
 
 process.load("FWCore.MessageService.MessageLogger_cfi")
-process.MessageLogger.cerr.FwkReport.reportEvery = 100
+process.load("L1Trigger.L1CaloTrigger.l1tS2PFJetInputPatternWriter_cfi")
+process.MessageLogger.cerr.FwkReport.reportEvery = 1
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(200) )
 
 process.source = cms.Source("PoolSource",
   # fileNames = cms.untracked.vstring("file:/hdfs/user/sb17498/CMS_Phase_2/jetMETStudies/ComputePhase1AndAK4L1TJetsFromPfCandidates_10_0_4_MTD/ComputeUncalibratedPhase1AndAK4L1TJetsFromPfCandidates_10_0_4_MTD_7x7Jets.root"),
   # fileNames = cms.untracked.vstring("file:myOutputFile.root"),
-  fileNames = cms.untracked.vstring("file:/hdfs/user/sb17498/CMS_Phase_2/jetMETStudies/TTBar_200_10_4_0_MTD/inputs104X_1.root"),
+  # fileNames = cms.untracked.vstring("file:/hdfs/user/sb17498/CMS_Phase_2/jetMETStudies/TTBar_200_10_4_0_MTD/inputs104X_1.root"),
+  fileNames = cms.untracked.vstring("file:/hdfs/user/sb17498/CMS_Phase_2/jetMETStudies/TTBar_200_10_4_0_MTD/TTBar_PU200.root"),
 )
 
 process.TFileService = cms.Service('TFileService', fileName = cms.string("pfdump.root"))
@@ -33,6 +35,6 @@ process.ntuplizer = cms.EDAnalyzer(
     maxNumberOfCandidates = cms.uint32(3456) # 24 * 144 regions
  )
 
-process.p = cms.Path(process.ntuplizer)
+process.p = cms.Path(process.ntuplizer + process.l1tS2PFJetInputPatternWriter)
 
 process.e = cms.EndPath(process.out)
