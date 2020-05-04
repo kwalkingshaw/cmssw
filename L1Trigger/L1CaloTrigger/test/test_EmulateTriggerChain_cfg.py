@@ -7,12 +7,14 @@ from L1Trigger.L1CaloTrigger.Phase1L1TJetProducer_cfi import Phase1L1TJetProduce
 process = cms.Process("TEST")
 
 process.load("FWCore.MessageService.MessageLogger_cfi")
-process.MessageLogger.cerr.FwkReport.reportEvery = 100
+process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100))
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(200))
+
+process.TFileService = cms.Service('TFileService', fileName = cms.string("CMSSWSums.root"))
 
 process.source = cms.Source("PoolSource",
-  fileNames = cms.untracked.vstring("file:/hdfs/user/sb17498/CMS_Phase_2/jetMETStudies/TTBar_200_10_4_0_MTD/inputs104X_1.root"),
+  fileNames = cms.untracked.vstring("file:/hdfs/user/sb17498/CMS_Phase_2/jetMETStudies/TTBar_200_10_4_0_MTD/TTBar_PU200.root"),
 )
 
 process.out = cms.OutputModule("PoolOutputModule",
@@ -68,10 +70,26 @@ process.Phase1L1TSumsProducer = cms.EDProducer('Phase1L1TSumsProducer',
   outputCollectionName = cms.string("Sums"),
 )
 
+process.SaveSums = cms.EDAnalyzer("SaveGenSumsAndL1Sums",
+  genMETCollectionTag = cms.InputTag("genMetTrue"), # taking pre-existing MET collection
+  l1tMETCollectionTag = cms.InputTag("Phase1L1TSumsProducer", "Sums"), # taking L1T MET produced by jet trigger
+  genJetCollectionTag = cms.InputTag("ak4GenJetsNoNu"), # taking pre-existing gen jet collection
+  l1tHTCollectionTag = cms.InputTag("Phase1L1TSumsProducer", "Sums"), # taking L1T HT produced by jet trigger
+)
+
+process.SaveJets = cms.EDAnalyzer(
+  "StoreCandidatesToTree", 
+  candidateCollectionTag = cms.InputTag("Phase1L1TJetProducer", "UncalibratedPhase1L1TJetFromPfCandidates"),
+  treeName = cms.string("EmulatorJets"),
+  maxNumberOfCandidates = cms.uint32(3) # demonstrator can fit up to three jets
+)
+
 # runs the jet finder and sum producer
 process.p = cms.Path(
   process.Phase1L1TJetProducer + 
-  process.Phase1L1TSumsProducer
+  process.Phase1L1TSumsProducer + 
+  process.SaveSums + 
+  process.SaveJets
 )
 
 process.e = cms.EndPath(process.out)
