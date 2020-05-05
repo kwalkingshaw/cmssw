@@ -9,7 +9,7 @@ process = cms.Process("TEST")
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(200))
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(50000))
 
 process.TFileService = cms.Service('TFileService', fileName = cms.string("CMSSWSums.root"))
 
