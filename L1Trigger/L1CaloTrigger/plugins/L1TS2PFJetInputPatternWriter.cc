@@ -238,15 +238,15 @@ L1TS2PFJetInputPatternWriter::analyze(const edm::Event& iEvent, const edm::Event
           }
         }
         // DEBUG: adds a special fram at end of event
-        if((iFrame%nPayloadFrames_) == (nPayloadFrames_ - 1) ){ 
-          if(iLink < 24){
-            data |= ((uint64_t)floor(0x11)     & 0xffff);
-            data |= ((uint64_t)floor(0x11)     & 0x3ff)  << 16;
-            data |= ((uint64_t)floor(0x11)      & 0x3ff)  << 26;
-            //std::cout << std::fixed << std::setprecision(2) << pfPartsB.at(iLink).pt() << "\t" <<  
-            //  pfPartsB.at(iLink).eta() << "\t" << pfPartsB.at(iLink).phi() << std::endl;
-          }
-        }
+        // if((iFrame%nPayloadFrames_) == (nPayloadFrames_ - 1) ){ 
+        //   if(iLink < 24){
+        //     data |= ((uint64_t)floor(0x11)     & 0xffff);
+        //     data |= ((uint64_t)floor(0x11)     & 0x3ff)  << 16;
+        //     data |= ((uint64_t)floor(0x11)      & 0x3ff)  << 26;
+        //     //std::cout << std::fixed << std::setprecision(2) << pfPartsB.at(iLink).pt() << "\t" <<  
+        //     //  pfPartsB.at(iLink).eta() << "\t" << pfPartsB.at(iLink).phi() << std::endl;
+        //   }
+        // }
         // add data to output
         data_.at(iLink).push_back( data );
       }
