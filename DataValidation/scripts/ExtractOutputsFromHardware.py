@@ -9,17 +9,31 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import colors
 from ROOT import TFile, TTree
+
 from array import array
 # import mplhep as hep
 
-ptLSB = 0.25;
-etaLSB = 0.0043633231;
-phiLSB = 0.0043633231;
-hwJets = []
-hwSum = [0, 0, 0] #ht, met, phi
+ptLSB = 0.25 # 1 in hw is 0.25 GeV
+etaLSB = 0.0043633231 # 1 in hw is 0.00436 (in PF units)
+phiLSB = 0.0043633231
+nPayloadFrames = 15 # after how many frames a new event begins
+frameStart = 89 # MAKE SURE THIS POINTS TO THE FIRST FRAME WHERE EVENTS CAN BE FOUND
+jetLinkIndices = range(0, 9) # iterable containing links carrying jets
+sumLinkIndex = 18 # link carring jets
+dR = 0.01 # matching radius for jets
+sumsTolerance = 0.05 # error margin for met and mht, eq. to 5% margin
+eventsPerFile = 50 # events per file
+nEvents = 50000 # number of events to analyse
+hardwareOutputFile = TFile("DataEmuComparison.root", "RECREATE") # root file where data-emu stuff will be saved
+emulatorOutputFile = TFile("CMSSWSums.root") # root file where to read emulator CMSSW output
+nTxFiles = 1000
+
+# DO NOT EDIT, data containers for later
+hwJets = [] 
+hwSum = [0, 0, 0] #ht, met, mht
 hwSums = []
 emJets = []
-emSum = [0, 0, 0] #ht, met, phi
+emSum = [0, 0, 0] #ht, met, mht
 emSums = []
 hwData = []
 emData = []
@@ -28,18 +42,12 @@ emDataNoZ = []
 nHw = 0
 nEm = 0
 nEvNoZ = 0
-nPayloadFrames = 15
-frameStart = 91
-nTxFiles = 1
-jetLinkIndices = range(0, 9)
-sumLinkIndex = 18
-dR = 0.01
-eventsPerFrame = 50
-nEvents = 50
+
+# FRAME UNPACKING
 
 # iterate through each file
-for hwTx in range(0,nTxFiles):
-  with open("datFullHwn/" + str(hwTx) + "/tx_summary.txt", "r") as inFile:
+for iTx in range(0, nTxFiles):
+  with open("output_ttbar200/ttbar_pu200_pattern_" + str(iTx) + "_output.txt", "r") as inFile:
     frameIt = -1
     # find a line with 1v in it
     for line in inFile:
@@ -49,7 +57,7 @@ for hwTx in range(0,nTxFiles):
         # skip frames once we have analysed enough events
         if nHw >= nEvents: continue
         # skip frames that are not produced by cms data
-        if frameIt >= frameStart + nPayloadFrames * (eventsPerFrame + 1):
+        if frameIt >= frameStart + nPayloadFrames * eventsPerFile:
           continue
         # skip frames before the actual beginning of data
         if frameIt < frameStart: continue
@@ -62,8 +70,8 @@ for hwTx in range(0,nTxFiles):
           # lower jet unpacking if pt not null
           if int(jetLink, 16) & 0xffff:
             jet = [(int(jetLink[8:],16)&0xffff)*ptLSB,
-                     ((((int(jetLink[8:],16)>>24)&0xff)*19)+9)*etaLSB,
-                     ((((int(jetLink[8:],16)>>16)&0xff)*20)+10)*phiLSB]
+                  ((((int(jetLink[8:],16)>>24)&0xff)*19)+9)*etaLSB,
+                  ((((int(jetLink[8:],16)>>16)&0xff)*20)+10)*phiLSB]
             hwJets.append(jet)
           # upper jet unpacking if pt not null
           if (int(jetLink, 16)>>32) & 0xffff:
@@ -71,6 +79,7 @@ for hwTx in range(0,nTxFiles):
                  ((((int(jetLink[:8],16)>>24)&0xff)*19)+9)*etaLSB,
                  ((((int(jetLink[:8],16)>>16)&0xff)*20)+10)*phiLSB]
             hwJets.append(jet)
+
         if int(sumLink, 16) != 0:
           hwSum = [(int(sumLink,16)&0xffff)*ptLSB, # ht
             ((int(sumLink,16) >> 16)&0xffff)*ptLSB, # met
@@ -88,135 +97,218 @@ for hwTx in range(0,nTxFiles):
           hwSums.append(hwSum)
           hwSum = [0, 0, 0]
 
-hardwareOutputFile = TFile("hardwareoutput.root", "RECREATE")
-hardwareJetSumsTree = TTree("hardwareOutput", "Tree with output from hardware")
+# writing to tree
+hardwareOutputFile.cd()
+hardwareJetSumsTree = TTree("HardwareEvents", "Tree with output from hardware in a event-like structure")
+emulatorJetSumsTree = TTree("EmulatorEvents", "Tree with output from emulator in a event-like structure")
+# these trees can be used for analysis in FAST
+hardwareJetTree = TTree("HardwareJets", "Flat tree with jets in output from hardware")
+emulatorJetTree = TTree("EmulatorJets", "Flat tree with jets in output from emulator")
+sumsTree = TTree("Sums", "Flat tree with sums in output from hardware and emulator")
+
+# preparing data holders
 
 hardware_jetPt = array("f", 3*[0])
 hardware_jetEta = array("f", 3*[0]) 
 hardware_jetPhi = array("f", 3*[0]) 
-hardware_jetMHT = array("f", [0]) 
-hardware_jetMET = array("f", [0]) 
-hardware_jetHT = array("f", [0]) 
+hardware_MHT = array("f", [0]) 
+hardware_MET = array("f", [0]) 
+hardware_HT = array("f", [0]) 
 hardware_length = array("i", [0])
+
+emulator_jetPt = array("f", 3*[0])
+emulator_jetEta = array("f", 3*[0]) 
+emulator_jetPhi = array("f", 3*[0]) 
+emulator_MHT = array("f", [0]) 
+emulator_MET = array("f", [0]) 
+emulator_HT = array("f", [0]) 
+emulator_length = array("i", [0])
+
+emulator_jetPt_flat = array("f", [0]) 
+emulator_jetEta_flat = array("f", [0]) 
+emulator_jetPhi_flat = array("f", [0]) 
+
+hardware_jetPt_flat = array("f", [0]) 
+hardware_jetEta_flat = array("f", [0]) 
+hardware_jetPhi_flat = array("f", [0]) 
+
+# preparing tree branches to write
 
 hardwareJetSumsTree.Branch("length", hardware_length, "length/i")
 hardwareJetSumsTree.Branch("pt", hardware_jetPt, "pt[length]/F")
 hardwareJetSumsTree.Branch("eta", hardware_jetEta, "eta[length]/F")
 hardwareJetSumsTree.Branch("phi", hardware_jetPhi, "phi[length]/F")
-hardwareJetSumsTree.Branch("mht", hardware_jetMHT, "mht/F")
-hardwareJetSumsTree.Branch("met", hardware_jetMET, "met/F")
-hardwareJetSumsTree.Branch("ht", hardware_jetHT, "ht/F")
+hardwareJetSumsTree.Branch("mht", hardware_MHT, "mht/F")
+hardwareJetSumsTree.Branch("met", hardware_MET, "met/F")
+hardwareJetSumsTree.Branch("ht", hardware_HT, "ht/F")
 
+emulatorJetSumsTree.Branch("length", emulator_length, "length/i")
+emulatorJetSumsTree.Branch("pt", emulator_jetPt, "pt[length]/F")
+emulatorJetSumsTree.Branch("eta", emulator_jetEta, "eta[length]/F")
+emulatorJetSumsTree.Branch("phi", emulator_jetPhi, "phi[length]/F")
+emulatorJetSumsTree.Branch("mht", emulator_MHT, "mht/F")
+emulatorJetSumsTree.Branch("met", emulator_MET, "met/F")
+emulatorJetSumsTree.Branch("ht", emulator_HT, "ht/F")
+
+hardwareJetTree.Branch("pt", hardware_jetPt_flat, "pt/F")
+hardwareJetTree.Branch("eta", hardware_jetEta_flat, "eta/F")
+hardwareJetTree.Branch("phi", hardware_jetPhi_flat, "phi/F")
+
+emulatorJetTree.Branch("pt", emulator_jetPt_flat, "pt/F")
+emulatorJetTree.Branch("eta", emulator_jetEta_flat, "eta/F")
+emulatorJetTree.Branch("phi", emulator_jetPhi_flat, "phi/F")
+
+sumsTree.Branch("hwMHT", hardware_MHT, "hwMHT/F")
+sumsTree.Branch("hwMET", hardware_MET, "hwMET/F")
+sumsTree.Branch("hwHT", hardware_HT, "hwHT/F")
+sumsTree.Branch("emuMHT", emulator_MHT, "emuMHT/F")
+sumsTree.Branch("emuMET", emulator_MET, "emuMET/F")
+sumsTree.Branch("emuHT", emulator_HT, "emuHT/F")
+
+# preparing CMSSW trees to read from
+
+
+
+emulatorJetTree_CMSSW = emulatorOutputFile.Get("SaveJets/EmulatorJets")
+emulatorMETTree_CMSSW = emulatorOutputFile.Get("SaveSums/genMETL1TMETTree")
+emulatorHTTree_CMSSW = emulatorOutputFile.Get("SaveSums/genHTL1THTTree")
+# UNCOMMENT FOR MHT, this loads the tree containing the MHT from CMSSW
+# emulatorMHTTree_CMSSW = emulatorOutputFile.Get("SaveGenSumsAndL1Sums/genMHTL1TMHTTree")
+
+emulatorJetTree_CMSSW.SetBranchAddress("pt", emulator_jetPt)
+emulatorJetTree_CMSSW.SetBranchAddress("eta", emulator_jetEta)
+emulatorJetTree_CMSSW.SetBranchAddress("phi", emulator_jetPhi)
+emulatorJetTree_CMSSW.SetBranchAddress("length", emulator_length)
+emulatorMETTree_CMSSW.SetBranchAddress("l1tMET", emulator_MET)
+emulatorHTTree_CMSSW.SetBranchAddress("l1tHT", emulator_HT)
+# UNCOMMENT FOR MHT, this loads the branch containing the MHT from CMSSW
+# emulatorMHTTree_CMSSW.SetBranchAddress("l1tMHT", emulator_MHT)
+
+#event loop 
 for iEv in range(0, nEvents):
+
+  # write hardware event
   hardware_length[0] = len(hwData[iEv])
   
   for iJet in range(0, 3):
+    # write hw event in array structure
     hardware_jetPt[iJet]  = hwData[iEv][iJet][0] if iJet < hardware_length[0] else 0
     hardware_jetEta[iJet] = hwData[iEv][iJet][1] if iJet < hardware_length[0] else 0
     hardware_jetPhi[iJet] = hwData[iEv][iJet][2] if iJet < hardware_length[0] else 0
-  
-  hardware_jetHT[0] = hwSums[iEv][0] 
-  hardware_jetMET[0] = hwSums[iEv][1]
-  hardware_jetMHT[0] = hwSums[iEv][2]
+    if iJet < hardware_length[0]:
+      # write hw event in flat tree
+      hardware_jetPt_flat[0] = hardware_jetPt[iJet]
+      hardware_jetEta_flat[0] = hardware_jetEta[iJet]
+      hardware_jetPhi_flat[0] = hardware_jetPhi[iJet]
+      hardwareJetTree.Fill()
 
+  hardware_HT[0] = hwSums[iEv][0] 
+  hardware_MET[0] = hwSums[iEv][1]
+  hardware_MHT[0] = hwSums[iEv][2]
   hardwareJetSumsTree.Fill()
 
-hardwareJetSumsTree.Write()
-hardwareOutputFile.Close()
+  # get emulator event
+  emulatorJetTree_CMSSW.GetEntry(iEv)
+  emulatorMETTree_CMSSW.GetEntry(iEv)
+  emulatorHTTree_CMSSW.GetEntry(iEv)
+  # UNCOMMENT FOR MHT, this retrieves the CMSSW MHT for that event
+  # emulatorMHTTree_CMSSW.GetEntry(iEv)
 
-emulatorOutputFile = TFile("CMSSWSums.root")
+  # write emulator event
+  
+  emJets = []
+  for iJet in range(0, emulator_length[0]):
+    # writing emu event to flat tree
+    emulator_jetPt_flat[0] = emulator_jetPt[iJet]
+    emulator_jetEta_flat[0] = emulator_jetEta[iJet]
+    emulator_jetPhi_flat[0] = emulator_jetPhi[iJet]
+    emulatorJetTree.Fill()
+  
+  # preparing data structure for jet comparison
+    emJets.append([emulator_jetPt[iJet], emulator_jetEta[iJet], emulator_jetPhi[iJet]])
+  
+  # saving emu event to tree
+  emulatorJetSumsTree.Fill()
 
-emulatorJetTree = emulatorOutputFile.Get("SaveJets/EmulatorJets")
-
-event_jetPt = array("f", 3*[0])
-event_jetEta = array("f", 3*[0]) 
-event_jetPhi = array("f", 3*[0]) 
-length = array("i", [0])
-
-emulatorJetTree.SetBranchAddress("pt", event_jetPt)
-emulatorJetTree.SetBranchAddress("eta", event_jetEta)
-emulatorJetTree.SetBranchAddress("phi", event_jetPhi)
-emulatorJetTree.SetBranchAddress("length", length)
-
-for iEv in range(0, nEvents):
-  # extracting jets
-  emulatorJetTree.GetEntry(iEv)
-  # interting a place holder if 
-  if length[0] == 0 : 
-    emJets = []
-  else:
-    emJets = [[event_jetPt[iJet], event_jetEta[iJet], event_jetPhi[iJet]] 
-      for iJet in range(0, length[0])]
+  sumsTree.Fill()
   nEm+=1
+  # preparing data struct for emu-hw agreement
+  emSums.append([emulator_HT[0], emulator_MET[0], emulator_MHT[0]])
   emData.append(emJets)
 
-nDiff = 0
+hardwareOutputFile.cd()
+hardwareJetSumsTree.Write()
+emulatorJetSumsTree.Write()
+hardwareJetTree.Write()
+emulatorJetTree.Write()
+sumsTree.Write()
+hardwareOutputFile.Close()
 
-nInterestingEvents = 0
+
+# writing emulator events and obtaining data-emu agreement for jet and sums
+
+nDiff_Jet = 0
+nDiff_HT = 0
+nDiff_MET = 0
+nDiff_MHT = 0
+
+nInterestingEvents_Jet = 0
+nInterestingEvents_HT = 0
+nInterestingEvents_MET = 0
+nInterestingEvents_MHT = 0
 for evIt in range(0,nHw):
+
+  # Computing jet agreement %
+  # marking event with different number of jets as bad
   if len(hwData[evIt]) != len(emData[evIt]):
-    nInterestingEvents += 1
-    nDiff+=1
-    continue
-  if len(hwData[evIt]) == 0: continue
-  nInterestingEvents += 1
-  goodJet=0
-  for hwJet in hwData[evIt]:
-    for emJet in emData[evIt]:
-      if hwJet[0] == emJet[0]:
-        if (hwJet[1]-emJet[1])<dR:
-          if (hwJet[2]-emJet[2])<dR:
-            goodJet+=1
-  if goodJet < len(hwData[evIt]):
-    nDiff+=1
+    nInterestingEvents_Jet += 1
+    nDiff_Jet+=1
+  else:
+    # skipping empty events
+    if len(hwData[evIt]) == 0: continue
+    nInterestingEvents_Jet += 1
+    goodJet=0
+    # jet matching
+    for hwJet in hwData[evIt]:
+      for emJet in emData[evIt]:
+        if hwJet[0] == emJet[0]:
+          if (hwJet[1]-emJet[1])<dR:
+            if (hwJet[2]-emJet[2])<dR:
+              goodJet+=1
+    # mark event as bad if not all jets are matched
+    if goodJet < len(hwData[evIt]):
+      nDiff_Jet+=1
 
+  # Computing sum agreement %
+  # skip null sums
+  if not (emSums[evIt][0] == 0 and hwSums[evIt][0] == 0):
+    nInterestingEvents_HT += 1
+    # ht is bad if em!=hw
+    if (emSums[evIt][0] != hwSums[evIt][0]):
+      nDiff_HT += 1
+  
+  if not (emSums[evIt][1] == 0 and hwSums[evIt][1] == 0):
+    nInterestingEvents_MET += 1
+    # met is bad if em-hw/em > sumsTolerance% (to take account for sqrt disagreements)
+    # met is bad if em = 0 and hw != 0 and viceversa
+    if emSums[evIt][1] > 0 and hwSums[evIt][1] > 0 and abs((emSums[evIt][1] - hwSums[evIt][1]) / emSums[evIt][1]) > sumsTolerance:
+      nDiff_MET += 1
+  
+  if not (emSums[evIt][2] == 0 and hwSums[evIt][2] == 0):
+    nInterestingEvents_MHT += 1
+    # mht is good is em-hw/em < sumsTolerance% (to take account for sqrt disagreements)
+    # mht is bad if em = 0 and hw != 0 and viceversa
+    if emSums[evIt][2] > 0 and hwSums[evIt][1] > 0 and abs((emSums[evIt][2] - hwSums[evIt][2]) / emSums[evIt][2]) > sumsTolerance:
+      nDiff_MHT += 1
 
-
-# print("\n\n=====================================================================================")
-# print("\t\tFirmware Events: " + str(nHw) + "\t\t" + "Emulator Events: " + str(nEm))
-# print("=====================================================================================")
-# print("\t\tpT\t" + "eta\t" + "phi\t\t" + "pT\t" + "eta\t" + "phi\t")
-# print("=====================================================================================")
-
-
-# for evIt in range(0,nHw):
-#   if hwData[evIt][0][0] > 0:
-#     hwDataNoZ.append(hwData[evIt])
-#   if emData[evIt][0][0] > 0:
-#     emDataNoZ.append(emData[evIt])
-#   nEvNoZ+=1
-
-
-# for evIt in range(0,nHw):
-#   if hwData[evIt][0][0] ==0 and emData[evIt][0][0] == 0:
-#     continue
-#   jetCount=0
-#   jetDiff = len(hwData[evIt]) - len(emData[evIt])
-#   print("")
-#   if jetDiff==0:
-#     for jetIt in range(len(hwData[evIt])):
-#       print(str(evIt) + "\t\t" + str(hwData[evIt][jetIt][0]) + "\t" + str(hwData[evIt][jetIt][1])[:4] + "\t" + str(hwData[evIt][jetIt][2])[:4] + "\t\t" +
-#           str(emData[evIt][jetIt][0]) + "\t" + str(emData[evIt][jetIt][1])[:4] + "\t" + str(emData[evIt][jetIt][2])[:4])
-#   if jetDiff>0:
-#     for jetIt in range(len(hwData[evIt])):
-#       jetCount+=1
-#       if jetCount > len(emData[evIt]):
-#         emData[evIt].append([0,0,0])
-#       print(str(evIt) + "\t\t" + str(hwData[evIt][jetIt][0]) + "\t" + str(hwData[evIt][jetIt][1])[:4] + "\t" + str(hwData[evIt][jetIt][2])[:4]  + "\t\t" +
-#           str(emData[evIt][jetIt][0]) + "\t" + str(emData[evIt][jetIt][1])[:4] + "\t" + str(emData[evIt][jetIt][2])[:4])
-#   if jetDiff<0:
-#     for jetIt in range(len(emData[evIt])):
-#       jetCount+=1
-#       if jetCount > len(hwData[evIt]):
-#         hwData[evIt].append([0,0,0])
-#       print(str(evIt) + "\t\t" + str(hwData[evIt][jetIt][0]) + "\t" + str(hwData[evIt][jetIt][1])[:4] + "\t" + str(hwData[evIt][jetIt][2])[:4]  + "\t\t" +
-#           str(emData[evIt][jetIt][0]) + "\t" + str(emData[evIt][jetIt][1])[:4] + "\t" + str(emData[evIt][jetIt][2])[:4])
-
-print("\n\nnEvent = " + str(nInterestingEvents) + "\nnDiff = " + str(nDiff) + "\nGood events = " + str((1-float(nDiff)/float(nInterestingEvents))*100) + "%")
+if (nInterestingEvents_Jet > 0): print("\n\nJET:\nnEvent = " + str(nInterestingEvents_Jet) + "\nnDiff = " + str(nDiff_Jet) + "\nGood events = " + str((1-float(nDiff_Jet)/float(nInterestingEvents_Jet))*100) + "%")
+if (nInterestingEvents_HT > 0): print("\n\nHT:\nnEvent = " + str(nInterestingEvents_HT) + "\nnDiff = " + str(nDiff_HT) + "\nGood events = " + str((1-float(nDiff_HT)/float(nInterestingEvents_HT))*100) + "%")
+if (nInterestingEvents_MET > 0): print("\n\nMET:\nnEvent = " + str(nInterestingEvents_MET) + "\nnDiff = " + str(nDiff_MET) + "\nGood events = " + str((1-float(nDiff_MET)/float(nInterestingEvents_MET))*100) + "%")
+if (nInterestingEvents_MHT > 0): print("\n\nMHT:\nnEvent = " + str(nInterestingEvents_MHT) + "\nnDiff = " + str(nDiff_MHT) + "\nGood events = " + str((1-float(nDiff_MHT)/float(nInterestingEvents_MHT))*100) + "%")
 
 
 # plt.style.use(hep.cms.style.ROOT)
-# fig, axs =   plt.subplots(2,3, figsize=(20, 12), gridspec_kw={'height_ratios': [3, 1]})
+# fig, axs =   plt.subplots(2,3, figsize=s(20, 12), gridspec_kw={'height_ratios': [3, 1]})
 
 # fig.patch.set_facecolor( '#ffffff')
 
