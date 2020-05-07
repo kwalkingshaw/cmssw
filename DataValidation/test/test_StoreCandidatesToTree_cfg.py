@@ -4,7 +4,7 @@ process = cms.Process("MATCH")
 
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.load("L1Trigger.L1CaloTrigger.l1tS2PFJetInputPatternWriter_cfi")
-process.MessageLogger.cerr.FwkReport.reportEvery = 1
+process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(50000) )
 

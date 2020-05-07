@@ -21,7 +21,7 @@ frameStart = 89 # MAKE SURE THIS POINTS TO THE FIRST FRAME WHERE EVENTS CAN BE F
 jetLinkIndices = range(0, 9) # iterable containing links carrying jets
 sumLinkIndex = 18 # link carring jets
 dR = 0.01 # matching radius for jets
-sumsTolerance = 0.05 # error margin for met and mht, eq. to 5% margin
+sumsTolerance = 1 # error margin for met and mht, eq. to 2 GeV
 eventsPerFile = 50 # events per file
 nEvents = 50000 # number of events to analyse
 hardwareOutputFile = TFile("DataEmuComparison.root", "RECREATE") # root file where data-emu stuff will be saved
@@ -257,7 +257,6 @@ nInterestingEvents_HT = 0
 nInterestingEvents_MET = 0
 nInterestingEvents_MHT = 0
 for evIt in range(0,nHw):
-
   # Computing jet agreement %
   # marking event with different number of jets as bad
   if len(hwData[evIt]) != len(emData[evIt]):
@@ -265,19 +264,19 @@ for evIt in range(0,nHw):
     nDiff_Jet+=1
   else:
     # skipping empty events
-    if len(hwData[evIt]) == 0: continue
-    nInterestingEvents_Jet += 1
-    goodJet=0
-    # jet matching
-    for hwJet in hwData[evIt]:
-      for emJet in emData[evIt]:
-        if hwJet[0] == emJet[0]:
-          if (hwJet[1]-emJet[1])<dR:
-            if (hwJet[2]-emJet[2])<dR:
-              goodJet+=1
-    # mark event as bad if not all jets are matched
-    if goodJet < len(hwData[evIt]):
-      nDiff_Jet+=1
+    if len(hwData[evIt]) != 0: 
+      nInterestingEvents_Jet += 1
+      goodJet=0
+      # jet matching
+      for hwJet in hwData[evIt]:
+        for emJet in emData[evIt]:
+          if hwJet[0] == emJet[0]:
+            if (hwJet[1]-emJet[1])<dR:
+              if (hwJet[2]-emJet[2])<dR:
+                goodJet+=1
+      # mark event as bad if not all jets are matched
+      if goodJet < len(hwData[evIt]):
+        nDiff_Jet+=1
 
   # Computing sum agreement %
   # skip null sums
@@ -287,18 +286,18 @@ for evIt in range(0,nHw):
     if (emSums[evIt][0] != hwSums[evIt][0]):
       nDiff_HT += 1
   
-  if not (emSums[evIt][1] == 0 and hwSums[evIt][1] == 0):
+  if (emSums[evIt][1] > 0) or (hwSums[evIt][1] > 0):
     nInterestingEvents_MET += 1
-    # met is bad if em-hw/em > sumsTolerance% (to take account for sqrt disagreements)
+    # met is bad if em-hw/em > sumsTolerance (to take account for sqrt disagreements)
     # met is bad if em = 0 and hw != 0 and viceversa
-    if emSums[evIt][1] > 0 and hwSums[evIt][1] > 0 and abs((emSums[evIt][1] - hwSums[evIt][1]) / emSums[evIt][1]) > sumsTolerance:
+    if emSums[evIt][1] > 0 and hwSums[evIt][1] > 0 and abs((emSums[evIt][1] - hwSums[evIt][1]) ) >= sumsTolerance:
       nDiff_MET += 1
   
   if not (emSums[evIt][2] == 0 and hwSums[evIt][2] == 0):
     nInterestingEvents_MHT += 1
-    # mht is good is em-hw/em < sumsTolerance% (to take account for sqrt disagreements)
+    # mht is bad is em-hw/em > sumsTolerance (to take account for sqrt disagreements)
     # mht is bad if em = 0 and hw != 0 and viceversa
-    if emSums[evIt][2] > 0 and hwSums[evIt][1] > 0 and abs((emSums[evIt][2] - hwSums[evIt][2]) / emSums[evIt][2]) > sumsTolerance:
+    if emSums[evIt][2] > 0 and hwSums[evIt][1] > 0 and abs((emSums[evIt][2] - hwSums[evIt][2]) ) >= sumsTolerance:
       nDiff_MHT += 1
 
 if (nInterestingEvents_Jet > 0): print("\n\nJET:\nnEvent = " + str(nInterestingEvents_Jet) + "\nnDiff = " + str(nDiff_Jet) + "\nGood events = " + str((1-float(nDiff_Jet)/float(nInterestingEvents_Jet))*100) + "%")
