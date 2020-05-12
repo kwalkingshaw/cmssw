@@ -6,3 +6,8 @@ __init__.py
 *~
 .vscode
 *.list
+*.txt
+*.png
+*.root
+*.out
+*.dat

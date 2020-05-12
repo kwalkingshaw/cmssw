@@ -170,9 +170,9 @@ l1t::EtSum Phase1L1TSumsProducer::_computeHT(const std::vector<reco::CaloJet>& l
     if 
     (
       (lJetPhi < this -> _phiLow) ||
-      (lJetPhi > this -> _phiUp)  ||
+      (lJetPhi >= this -> _phiUp)  ||
       (lJetEta < this -> _etaLow)||
-      (lJetEta > this -> _etaUp)  
+      (lJetEta >= this -> _etaUp)  
     ) continue;
     lHT += (lJetPt >= this -> _htPtThreshold) ? lJetPt : 0;
   }
@@ -208,9 +208,9 @@ l1t::EtSum Phase1L1TSumsProducer::_computeMET(const ParticleCollection & particl
     if 
     (
       (lParticlePhi < this -> _phiLow) ||
-      (lParticlePhi > this -> _phiUp)  ||
+      (lParticlePhi >= this -> _phiUp)  ||
       (lParticleEta < this -> _etaLow)  ||
-      (lParticleEta > this -> _etaUp)  
+      (lParticleEta >= this -> _etaUp)  
     ) continue;
     // computing bin index
     unsigned int iPhi = ( lParticlePhi - this -> _phiLow ) / this -> _phiStep;
