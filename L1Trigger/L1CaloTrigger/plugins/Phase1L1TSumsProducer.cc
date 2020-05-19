@@ -251,7 +251,7 @@ l1t::EtSum Phase1L1TSumsProducer::_computeMHT(const std::vector<reco::CaloJet>& 
   { 
     double lJetPhi = jet.phi();
 
-    if ((lJetPhi < this -> _phiLow) || (lJetPhi > this -> _phiUp)) continue;
+    if ((lJetPhi < this -> _phiLow) || (lJetPhi >= this -> _phiUp)) continue;
 
     unsigned int iPhi = ( lJetPhi - this -> _phiLow ) / this -> _phiStep;
 

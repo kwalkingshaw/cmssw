@@ -177,6 +177,7 @@ class L1PhaseIITreeProducer : public edm::EDAnalyzer {
 
                 edm::EDGetTokenT<l1t::L1PFTauCollection> L1PFTauToken_;
                 edm::EDGetTokenT< std::vector<l1t::PFCandidate> > l1PFCandidates_; 
+                edm::EDGetTokenT<l1t::l1pfSumsCollection> l1pfSumToken_;
 
                 edm::EDGetTokenT<l1t::PFTauCollection> L1NNTauToken_;
                 edm::EDGetTokenT<l1t::PFTauCollection> L1NNTauPFToken_;
@@ -251,7 +252,7 @@ L1PhaseIITreeProducer::L1PhaseIITreeProducer(const edm::ParameterSet& iConfig){
 
         l1PFCandidates_ =consumes <std::vector<l1t::PFCandidate> > (iConfig.getParameter<edm::InputTag>("l1PFCandidates")); 
         L1PFTauToken_ = consumes<l1t::L1PFTauCollection>(iConfig.getParameter<edm::InputTag>("L1PFTauToken"));
-
+        l1pfSumToken_ = consumes<l1t::l1pfSumsCollection>(iConfig.getParameter<edm::InputTag>("l1pfSumToken"));
         L1NNTauToken_ = consumes<l1t::PFTauCollection>(iConfig.getParameter<edm::InputTag>("L1NNTauToken"));
         L1NNTauPFToken_ = consumes<l1t::PFTauCollection>(iConfig.getParameter<edm::InputTag>("L1NNTauPFToken"));
 
@@ -342,6 +343,8 @@ L1PhaseIITreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
         edm::Handle<l1t::PFTauCollection> l1NNTauPF;
         iEvent.getByToken(L1NNTauPFToken_,l1NNTauPF);
 
+        edm::Handle<l1t::l1pfSumsCollection> L1PFEtSum;
+        iEvent.getByToken(l1pfSumToken_, L1PFEtSum);
 
         edm::Handle<l1t::L1HPSPFTauCollection> l1HPSPFTau;
         iEvent.getByToken(L1HPSPFTauToken_,l1HPSPFTau);
@@ -642,7 +645,11 @@ L1PhaseIITreeProducer::analyze(const edm::Event& iEvent, const edm::EventSetup& 
                 edm::LogWarning("MissingProduct") << "L1NNTauPFs missing"<<std::endl;
         }
 
-
+        if(L1PFEtSum.isValid()){
+                l1Extra->SetL1PFEtSum(L1PFEtSum, maxL1Extra_);
+        } else{
+               edm::LogWarning("MissingProduct") <<  "L1PFEtSums missing" << std::endl;
+        }
 
 
         if(l1HPSPFTau.isValid()){
