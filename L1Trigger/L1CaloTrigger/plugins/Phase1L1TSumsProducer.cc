@@ -102,7 +102,7 @@ Phase1L1TSumsProducer::Phase1L1TSumsProducer(const edm::ParameterSet& iConfig):
   // getting configuration settings
   _sinPhi(iConfig.getParameter<std::vector< double > >("sinPhi")),
   _cosPhi(iConfig.getParameter<std::vector< double > >("cosPhi")),
-  _nBinsPhi(iConfig.getParameter<unsigned int>("nBinsPhi") / _lsb),
+  _nBinsPhi(iConfig.getParameter<unsigned int>("nBinsPhi")),
   _lsb(iConfig.getParameter<double>("lsb")),
   _lsb_pt(iConfig.getParameter<double>("lsb_pt")),
   _phiLow_hls(iConfig.getParameter<double>("phiLow") / _lsb),
@@ -121,13 +121,19 @@ Phase1L1TSumsProducer::Phase1L1TSumsProducer(const edm::ParameterSet& iConfig):
   this -> _particleCollectionTag = new edm::EDGetTokenT< edm::View<reco::Candidate> >(consumes< edm::View<reco::Candidate> > (iConfig.getParameter< edm::InputTag >("particleCollectionTag")));  
   // same thing here, I am setting myself up to access jets down the road
   this -> _jetCollectionTag = new edm::EDGetTokenT< std::vector<reco::CaloJet> >(consumes< std::vector<reco::CaloJet> > (iConfig.getParameter< edm::InputTag >("jetCollectionTag")));  
-  this -> _phiStep_hls = ( this -> _phiUp_hls - this -> _phiLow_hls ) / this -> _nBinsPhi;
+  std::cout<<"nBinsPhi: " <<this->_nBinsPhi << std::endl;
+  std::cout<<"phiUp: " <<this->_phiUp_hls << std::endl;
+  std::cout<<"phiLow: " <<this->_phiLow_hls << std::endl;
+  
+
+  this -> _phiStep_hls = static_cast<int>( this -> _phiUp_hls - this -> _phiLow_hls ) / this -> _nBinsPhi;
   // preparing CMSSW to save my sums later
   // "setBranchAlias" specifies the label that my output will have in the output file
   // produces <> sets up the producer to save stuff later
   produces< BXVector<l1t::EtSum> >( this -> _outputCollectionName ).setBranchAlias(this -> _outputCollectionName);
 
-
+  _sinPhi_hls.reserve(_sinPhi.size());
+  _cosPhi_hls.reserve(_cosPhi.size());
   std::copy(_sinPhi.begin(), _sinPhi.end(), _sinPhi_hls.begin());
   std::copy(_cosPhi.begin(), _cosPhi.end(), _cosPhi_hls.begin());
 

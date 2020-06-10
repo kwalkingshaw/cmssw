@@ -330,8 +330,8 @@ reco::CaloJet Phase1L1TJetProducer::_buildJetFromSeed(const TH2F & caloGrid, con
   reco::Candidate::PolarLorentzVector ptVector;
   ptVector.SetPt(ptSum);
   //ptVector.SetPtEtaPhiE(ptSum, caloGrid.GetXaxis() -> GetBinCenter(iEta), caloGrid.GetYaxis() -> GetBinCenter(iPhi), ptSum);
-  ptVector.SetEta(caloGrid.GetXaxis() -> GetBinCenter(iEta));
-  ptVector.SetPhi(caloGrid.GetYaxis() -> GetBinCenter(iPhi));
+  ptVector.SetEta(caloGrid.GetXaxis() -> GetBinCenter(iEta * 19 + 9 * _lsb));
+  ptVector.SetPhi(caloGrid.GetYaxis() -> GetBinCenter(iPhi * 20 + 10 * _lsb));
   // ptVector.SetEta(iEta);
   // ptVector.SetPhi(iPhi);
   reco::CaloJet jet;
