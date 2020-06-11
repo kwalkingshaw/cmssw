@@ -50,6 +50,7 @@ Description: Produces jets with a phase-1 like sliding window algorithm using a 
 #include <cmath>
 #include "ap_fixed.h"
 #include "ap_int.h"
+//#include <hls_dsp.h>
 
 class Phase1L1TSumsProducer : public edm::one::EDProducer<edm::one::SharedResources> {
    public:
@@ -170,9 +171,9 @@ void Phase1L1TSumsProducer::produce(edm::Event& iEvent, const edm::EventSetup& i
   lSumVectorPtr -> push_back(0, lHT);
   lSumVectorPtr -> push_back(0, lMET);
   lSumVectorPtr -> push_back(0, lMHT);
-  //std::cout << "HT-MET sums prod: " << lHT.pt() << "\t" << lMET.pt() << std::endl;
-  //std::cout << "MET-MHT sums prod: " << lMET.pt() << "\t" << lMHT.pt() << std::endl;
-  //std::cout << "MHT sums prod: " << lMHT.pt() << std::endl;
+  std::cout << "HT-MET sums prod: " << lHT.pt() << "\t" << lMET.pt() << std::endl;
+  std::cout << "MET-MHT sums prod: " << lMET.pt() << "\t" << lMHT.pt() << std::endl;
+  std::cout << "MHT sums prod: " << lMHT.pt() << std::endl;
   //saving sums
   iEvent.put(std::move(lSumVectorPtr), this -> _outputCollectionName);
 
@@ -183,7 +184,7 @@ void Phase1L1TSumsProducer::produce(edm::Event& iEvent, const edm::EventSetup& i
 // computes ht, adds jet pt to ht only if the pt of the jet is above the ht calculation threshold
 l1t::EtSum Phase1L1TSumsProducer::_computeHT(const std::vector<reco::CaloJet>& l1jetVector) 
 {
-  ap_uint<16> lHT = 0;
+  double lHT = 0;
   
   // range-based for loop that goes through all the trigger jets in the event
   for (const auto & jet: l1jetVector)
@@ -198,12 +199,9 @@ l1t::EtSum Phase1L1TSumsProducer::_computeHT(const std::vector<reco::CaloJet>& l
       (lJetEta < this -> _etaLow_hls)||
       (lJetEta >= this -> _etaUp_hls)  
     ) continue;
-    //lHT += (lJetPt >= this -> _htPtThreshold_hls) ? lJetPt : 0;
-    //lHT *= lsb_pt;
+    
     if (lJetPt >= this -> _htPtThreshold_hls){
-      lHT = lHT + (lJetPt * _lsb_pt); 
-      //lHT += lJetPt * lsb_pt;
-      
+      lHT = lHT + (static_cast<int>(lJetPt) * _lsb_pt); 
     }
     
   }
@@ -247,20 +245,32 @@ l1t::EtSum Phase1L1TSumsProducer::_computeMET(const ParticleCollection & particl
     // computing bin index
     unsigned int iPhi = ( lParticlePhi - this -> _phiLow_hls ) / this -> _phiStep_hls;
     // retrieving sin cos from LUT emulator
-    ap_ufixed<8, 1, AP_RND> lSinPhi = this -> _sinPhi[iPhi];
-    ap_ufixed<8, 1, AP_RND> lCosPhi = this -> _cosPhi[iPhi];
+    ap_ufixed<8, 1, AP_RND> lSinPhi = this -> _sinPhi_hls[iPhi];
+    ap_ufixed<8, 1, AP_RND> lCosPhi = this -> _cosPhi_hls[iPhi];
     // computing px and py of the particle and adding it to the total px and py of the event
     lTotalPx += (lParticlePt * lCosPhi);
     lTotalPy += (lParticlePt * lSinPhi);
+ 
+
   }
 
-  ap_uint<16> lMET = sqrt(static_cast<double>(lTotalPx * lTotalPx + lTotalPy * lTotalPy)) * _lsb_pt;
+  double lMET = static_cast<int>(sqrt(static_cast<int>(lTotalPx * lTotalPx + lTotalPy * lTotalPy))) * _lsb_pt;
+  
+  //ap_uint<32> lTotalParticleSquared = lTotalPx * lTotalPx + lTotalPy * lTotalPy;
+  //hls::sqrt_input<32, hls::CORDIC_FORMAT_USIG_INT>::in lMETSquaredCORDIC;
+  //hls::sqrt_output<17, hls::CORDIC_FORMAT_USIG_INT>::out lMETCORDIC;
+  //lMETSquaredCORDIC.in = lMETSquared;
+  //hls::sqrt<hls::CORDIC_FORMAT_USIG_INT, 32, 17, hls::CORDIC_ROUND_TRUNCATE>(lMETSquaredCORDIC, lMETCORDIC);
+  //ap_uint<16> lMET = lMETCORDIC.out; 
+  //double sMET = lMET * _lsb_pt;
+  
+  
   //packing in EtSum object
   reco::Candidate::PolarLorentzVector lMETVector;
   // double lCosMETPhi = lTotalPx/lMET;
   lMETVector.SetPxPyPzE(lTotalPx, lTotalPy, 0, lMET);
-  // lMETVector.SetEta(0);
-  // lMETVector.SetPhi(0);
+  //lMETVector.SetEta(0);
+  //lMETVector.SetPhi(0);
   // kMissingEt is the enumerator for MET
   l1t::EtSum lMETSum(lMETVector, l1t::EtSum::EtSumType::kMissingEt);
   // std::cout << lMETVector.pt() << " == " << lMET << "?" << std::endl;
@@ -290,9 +300,9 @@ l1t::EtSum Phase1L1TSumsProducer::_computeMHT(const std::vector<reco::CaloJet>& 
     unsigned int iPhi = ( lJetPhi - this -> _phiLow_hls ) / this -> _phiStep_hls;
 
     // retrieving sin cos from LUT emulator
-    ap_ufixed<8, 1, AP_RND> lSinPhi = this -> _sinPhi[iPhi];
-    ap_ufixed<8, 1, AP_RND> lCosPhi = this -> _cosPhi[iPhi];
-    
+    ap_ufixed<8, 1, AP_RND> lSinPhi = this -> _sinPhi_hls[iPhi];
+    ap_ufixed<8, 1, AP_RND> lCosPhi = this -> _cosPhi_hls[iPhi];
+   
    
     // checking if above threshold
     //lTotalJetPx += (jet.pt() >= this -> _htPtThreshold_hls) ? jet.pt() * lCosPhi : 0;
@@ -303,11 +313,19 @@ l1t::EtSum Phase1L1TSumsProducer::_computeMHT(const std::vector<reco::CaloJet>& 
       lTotalJetPy += lJetPt * lSinPhi;
       
     }
-
+  
   
   }
 
-  ap_uint<16> lMHT = sqrt(static_cast<double> (lTotalJetPx * lTotalJetPx + lTotalJetPy * lTotalJetPy)) * _lsb_pt;
+  double lMHT = static_cast<int>(sqrt(static_cast<int>(lTotalJetPx * lTotalJetPx + lTotalJetPy * lTotalJetPy))) * _lsb_pt;
+ 
+ //ap_uint<32> lTotalJetSquared = lTotalJetPx * lTotalJetPx + lTotalJetPy * lTotalJetPy;
+  //hls::sqrt_input<32, hls::CORDIC_FORMAT_USIG_INT>::in lMHTSquaredCORDIC;
+  //hls::sqrt_output<17, hls::CORDIC_FORMAT_USIG_INT>::out lMHTCORDIC;
+  //lMHTSquaredCORDIC.in = lMHTSquared;
+  //hls::sqrt<hls::CORDIC_FORMAT_USIG_INT, 32, 17, hls::CORDIC_ROUND_TRUNCATE>(lMHTSquaredCORDIC, lMHTCORDIC);
+  //ap_uint<16> lMHT = lMHTCORDIC.out; 
+  //double sMHT = lMHT * _lsb_pt;
 
   reco::Candidate::PolarLorentzVector lMHTVector;
   lMHTVector.SetPt(lMHT);
