@@ -1,0 +1,11 @@
+__init__.py
+*.exe
+*.pyc
+.*.swp
+.#*
+_*
+*.root
+*.pickle
+#*#
+*~
+.vscode

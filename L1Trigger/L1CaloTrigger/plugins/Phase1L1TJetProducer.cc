@@ -86,15 +86,16 @@ class Phase1L1TJetProducer : public edm::one::EDProducer<edm::one::SharedResourc
       std::vector<double> _etaBinning;
       size_t _nBinsEta;
       unsigned int _nBinsPhi;
+      double _lsb;
+      double _lsb_pt;
       ap_uint<8> _phiLow_hls;
       ap_uint<8> _phiUp_hls;
-      ap_uint<8> _jetIEtaSize_hls;
-      ap_uint<8> _jetIPhiSize_hls;
+      unsigned int _jetIEtaSize;
+      unsigned int _jetIPhiSize;
       ap_uint<16> _seedPtThreshold_hls;
       bool _puSubtraction;
       bool _vetoZeroPt;
-      double _lsb;
-      double _lsb_pt;
+      
 
       std::string _outputCollectionName;
 
@@ -106,15 +107,15 @@ Phase1L1TJetProducer::Phase1L1TJetProducer(const edm::ParameterSet& iConfig):
   _etaBinning(iConfig.getParameter<std::vector<double> >("etaBinning")),
   _nBinsEta(this -> _etaBinning.size() - 1),
   _nBinsPhi(iConfig.getParameter<unsigned int>("nBinsPhi")),
+  _lsb(iConfig.getParameter<double>("lsb")),
+  _lsb_pt(iConfig.getParameter<double>("lsb_pt")),
   _phiLow_hls(iConfig.getParameter<double>("phiLow") / _lsb),
   _phiUp_hls(iConfig.getParameter<double>("phiUp") / _lsb),
-  _jetIEtaSize_hls(iConfig.getParameter<unsigned int>("jetIEtaSize") / _lsb),
-  _jetIPhiSize_hls(iConfig.getParameter<unsigned int>("jetIPhiSize") / _lsb),
+  _jetIEtaSize(iConfig.getParameter<unsigned int>("jetIEtaSize")),
+  _jetIPhiSize(iConfig.getParameter<unsigned int>("jetIPhiSize")),
   _seedPtThreshold_hls(iConfig.getParameter<double>("seedPtThreshold") / _lsb_pt),
   _puSubtraction(iConfig.getParameter<bool>("puSubtraction")),
   _vetoZeroPt(iConfig.getParameter<bool>("vetoZeroPt")),
-  _lsb(iConfig.getParameter<double>("lsb")),
-  _lsb_pt(iConfig.getParameter<double>("lsb_pt")),
   _outputCollectionName(iConfig.getParameter<std::string>("outputCollectionName"))
 {
   this -> _inputCollectionTag = new edm::EDGetTokenT< edm::View<reco::Candidate> >(consumes< edm::View<reco::Candidate> > (iConfig.getParameter< edm::InputTag >("inputCollectionTag")));  
@@ -257,8 +258,8 @@ std::vector<std::tuple<int, int>> Phase1L1TJetProducer::_findSeeds(const TH2F & 
 
   std::vector<std::tuple<int, int>> seeds;
 
-  ap_uint<8> etaHalfSize = (int) this -> _jetIEtaSize_hls/2;
-  ap_uint<8> phiHalfSize = (int) this -> _jetIPhiSize_hls/2;
+  int etaHalfSize = (int) this -> _jetIEtaSize/2;
+  int phiHalfSize = (int) this -> _jetIPhiSize/2;
 
   // for each point of the grid check if it is a local maximum
   // to do so I take a point, and look if is greater than the points around it (in the 9x9 neighborhood)
@@ -307,11 +308,11 @@ std::vector<std::tuple<int, int>> Phase1L1TJetProducer::_findSeeds(const TH2F & 
 
 reco::CaloJet Phase1L1TJetProducer::_buildJetFromSeed(const TH2F & caloGrid, const std::tuple<int, int> & seed) 
 {
-  ap_uint<8> iEta = std::get<0>(seed);
-  ap_uint<8> iPhi = std::get<1>(seed);
+  int iEta = std::get<0>(seed);
+  int iPhi = std::get<1>(seed);
 
-  ap_uint<8> etaHalfSize = (int) this -> _jetIEtaSize_hls/2;
-  ap_uint<8> phiHalfSize = (int) this -> _jetIPhiSize_hls/2;
+  int etaHalfSize = (int) this -> _jetIEtaSize/2;
+  int phiHalfSize = (int) this -> _jetIPhiSize/2;
 
   ap_uint<16> ptSum = 0;
   // Scanning through the grid centered on the seed
@@ -398,9 +399,9 @@ void Phase1L1TJetProducer::_fillCaloGrid(TH2F & caloGrid, const Container & trig
       // {
       //   std::cout << "input pt-eta-phi: " << (float) primitiveIterator -> pt() << "\t" <<(float) primitiveIterator -> eta() << "\t" << (float) primitiveIterator -> phi() << std::endl;
       // }
-      ap_uint<16> pt = primitiveIterator -> pt() / _lsb_pt;
-      ap_uint<8> eta = primitiveIterator -> eta() / _lsb;
-      ap_uint<8> phi = primitiveIterator -> phi() / _lsb;
+      ap_uint<16> pt = static_cast<int>(primitiveIterator -> pt() / _lsb_pt);
+      ap_uint<8> eta = static_cast<int>(primitiveIterator -> eta() / _lsb);
+      ap_uint<8> phi = static_cast<int>(primitiveIterator -> phi() / _lsb);
       caloGrid.Fill(eta, phi, pt);
       // caloGrid.Fill((float) primitiveIterator -> eta(), (float) primitiveIterator -> phi(), (float) primitiveIterator -> pt());
     }
