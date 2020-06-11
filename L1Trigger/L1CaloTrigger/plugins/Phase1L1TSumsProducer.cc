@@ -302,7 +302,8 @@ l1t::EtSum Phase1L1TSumsProducer::_computeMHT(const std::vector<reco::CaloJet>& 
     // retrieving sin cos from LUT emulator
     ap_ufixed<8, 1, AP_RND> lSinPhi = this -> _sinPhi_hls[iPhi];
     ap_ufixed<8, 1, AP_RND> lCosPhi = this -> _cosPhi_hls[iPhi];
-   
+    std::cout << "lSinPhi: " << lSinPhi << std::endl;
+    std::cout << "lCosPhi: " << lCosPhi << std::endl;
    
     // checking if above threshold
     //lTotalJetPx += (jet.pt() >= this -> _htPtThreshold_hls) ? jet.pt() * lCosPhi : 0;
