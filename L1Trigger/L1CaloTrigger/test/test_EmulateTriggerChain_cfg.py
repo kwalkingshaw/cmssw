@@ -9,13 +9,13 @@ process = cms.Process("TEST")
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1)) #50000
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10)) #50000
 
 process.TFileService = cms.Service('TFileService', fileName = cms.string("CMSSWSums.root"))
 
 process.source = cms.Source("PoolSource",
   fileNames = cms.untracked.vstring("file:/hdfs/user/sb17498/CMS_Phase_2/jetMETStudies/TTBar_200_10_4_0_MTD/TTBar_PU200.root"),
-  skipEvents=cms.untracked.uint32(1)
+  #skipEvents=cms.untracked.uint32(1)
 )
 
 

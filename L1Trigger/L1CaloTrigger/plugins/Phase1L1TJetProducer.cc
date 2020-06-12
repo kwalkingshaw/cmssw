@@ -82,12 +82,14 @@ class Phase1L1TJetProducer : public edm::one::EDProducer<edm::one::SharedResourc
       void _fillCaloGrid(TH2F & caloGrid, const Container & triggerPrimitives);
 
       edm::EDGetTokenT<edm::View<reco::Candidate>> *_inputCollectionTag;
-
-      std::vector<double> _etaBinning;
-      size_t _nBinsEta;
-      unsigned int _nBinsPhi;
       double _lsb;
       double _lsb_pt;
+      std::vector<double> _etaBinning;
+      std::vector< ap_uint<8> > _etaBinning_hls;
+      size_t _nBinsEta;
+      unsigned int _nBinsPhi;
+      double _phiLow;
+      double _phiUp;
       ap_uint<8> _phiLow_hls;
       ap_uint<8> _phiUp_hls;
       unsigned int _jetIEtaSize;
@@ -104,11 +106,11 @@ class Phase1L1TJetProducer : public edm::one::EDProducer<edm::one::SharedResourc
 
 Phase1L1TJetProducer::Phase1L1TJetProducer(const edm::ParameterSet& iConfig):
   // getting configuration settings
-  _etaBinning(iConfig.getParameter<std::vector<double> >("etaBinning")),
-  _nBinsEta(this -> _etaBinning.size() - 1),
-  _nBinsPhi(iConfig.getParameter<unsigned int>("nBinsPhi")),
   _lsb(iConfig.getParameter<double>("lsb")),
   _lsb_pt(iConfig.getParameter<double>("lsb_pt")),
+  _etaBinning_hls(iConfig.getParameter<std::vector<double> >("etaBinning") / _lsb),
+  _nBinsEta(this -> _etaBinning.size() - 1),
+  _nBinsPhi(iConfig.getParameter<unsigned int>("nBinsPhi")),
   _phiLow_hls(iConfig.getParameter<double>("phiLow") / _lsb),
   _phiUp_hls(iConfig.getParameter<double>("phiUp") / _lsb),
   _jetIEtaSize(iConfig.getParameter<unsigned int>("jetIEtaSize")),
@@ -154,7 +156,7 @@ float Phase1L1TJetProducer::_getTowerEnergy(const TH2F & caloGrid, int iEta, int
 void Phase1L1TJetProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
 
-  TH2F lCaloGrid("caloGrid", "Calorimeter grid", this -> _nBinsEta, this-> _etaBinning.data(), this -> _nBinsPhi, this -> _phiLow_hls, this -> _phiUp_hls);
+  TH2F lCaloGrid("caloGrid", "Calorimeter grid", this -> _nBinsEta, this-> _etaBinning_hls.data(), this -> _nBinsPhi, this -> _phiLow_hls, this -> _phiUp_hls);
   lCaloGrid.GetXaxis() -> SetTitle("#eta");
   lCaloGrid.GetYaxis() -> SetTitle("#phi");
   
@@ -399,11 +401,16 @@ void Phase1L1TJetProducer::_fillCaloGrid(TH2F & caloGrid, const Container & trig
       // {
       //   std::cout << "input pt-eta-phi: " << (float) primitiveIterator -> pt() << "\t" <<(float) primitiveIterator -> eta() << "\t" << (float) primitiveIterator -> phi() << std::endl;
       // }
-      ap_uint<16> pt = static_cast<int>(primitiveIterator -> pt() / _lsb_pt);
-      ap_uint<8> eta = static_cast<int>(primitiveIterator -> eta() / _lsb);
-      ap_uint<8> phi = static_cast<int>(primitiveIterator -> phi() / _lsb);
-      caloGrid.Fill(eta, phi, pt);
+      if(primitiveIterator -> phi() > _phiLow &&
+      primitiveIterator -> phi() < _phiUp &&
+      primitiveIterator -> eta() > _etaBinning.front() &&
+      primitiveIterator -> eta() < _etaBinning.back()){
+        ap_uint<16> pt = static_cast<int>(primitiveIterator -> pt() / _lsb_pt);
+        ap_uint<8> eta = static_cast<int>(primitiveIterator -> eta() / _lsb);
+        ap_uint<8> phi = static_cast<int>(primitiveIterator -> phi() / _lsb);
+        caloGrid.Fill(eta, phi, pt);
       // caloGrid.Fill((float) primitiveIterator -> eta(), (float) primitiveIterator -> phi(), (float) primitiveIterator -> pt());
+      }
     }
   return;
 }
