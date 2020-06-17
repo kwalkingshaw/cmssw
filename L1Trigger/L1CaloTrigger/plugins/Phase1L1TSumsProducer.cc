@@ -200,9 +200,9 @@ l1t::EtSum Phase1L1TSumsProducer::_computeHT(const std::vector<reco::CaloJet>& l
   // range-based for loop that goes through all the trigger jets in the event
   for (const auto & jet: l1jetVector)
   {
-    ap_uint<16> lJetPt = jet.pt() * _lsb_pt;
-    ap_uint<8> lJetPhi = jet.phi() * _lsb;
-    ap_uint<8> lJetEta = jet.eta() * _lsb;
+    ap_uint<16> lJetPt = jet.pt() / _lsb_pt;
+    ap_uint<8> lJetPhi = jet.phi() / _lsb;
+    ap_uint<8> lJetEta = jet.eta() / _lsb;
     if 
     (
       (lJetPhi < this -> _phiLow_hls) ||
@@ -242,9 +242,9 @@ l1t::EtSum Phase1L1TSumsProducer::_computeMET(const ParticleCollection & particl
   // range-based for loop, that goes through the particle flow inputs
   for (const auto & particle : particleCollection)
   {
-    ap_uint<8> lParticlePhi = particle.phi() * _lsb;
-    ap_uint<8> lParticleEta = particle.eta() * _lsb;
-    ap_uint<16> lParticlePt = particle.pt() * _lsb_pt;
+    ap_uint<8> lParticlePhi = particle.phi() / _lsb;
+    ap_uint<8> lParticleEta = particle.eta() / _lsb;
+    ap_uint<16> lParticlePt = particle.pt() / _lsb_pt;
     // skip particle if it does not fall in the range
     if 
     (
@@ -294,8 +294,8 @@ l1t::EtSum Phase1L1TSumsProducer::_computeMHT(const std::vector<reco::CaloJet>& 
 
   for (const auto & jet: l1jetVector)
   { 
-    ap_uint<8> lJetPhi = jet.phi() * _lsb;
-    ap_uint<16> lJetPt = jet.pt() * _lsb_pt;
+    ap_uint<8> lJetPhi = jet.phi() / _lsb;
+    ap_uint<16> lJetPt = jet.pt() / _lsb_pt;
     
 
     if ((lJetPhi < this -> _phiLow_hls) || (lJetPhi >= this -> _phiUp_hls)) continue;
