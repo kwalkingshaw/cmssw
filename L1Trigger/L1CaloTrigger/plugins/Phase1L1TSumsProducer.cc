@@ -50,7 +50,7 @@ Description: Produces jets with a phase-1 like sliding window algorithm using a 
 #include <cmath>
 #include "ap_fixed.h"
 #include "ap_int.h"
-//#include <hls_dsp.h>
+
 
 class Phase1L1TSumsProducer : public edm::one::EDProducer<edm::one::SharedResources> {
    public:
@@ -81,16 +81,21 @@ class Phase1L1TSumsProducer : public edm::one::EDProducer<edm::one::SharedResour
       double _lsb_pt;
       // lower phi value
       ap_uint<8> _phiLow_hls;
+      double _phiLow;
       // higher phi value
       ap_uint<8> _phiUp_hls;
+      double _phiUp;
       // lower eta value
       ap_uint<8> _etaLow_hls;
+      double _etaLow;
       // higher eta value
       ap_uint<8> _etaUp_hls;
+      double _etaUp;
       // size of a phi bin
       ap_uint<8> _phiStep_hls;
       // threshold for ht calculation
       ap_uint<16>_htPtThreshold_hls;
+      double _htPtThreshold;
       // label of sums
       std::string _outputCollectionName;
 
@@ -106,15 +111,20 @@ Phase1L1TSumsProducer::Phase1L1TSumsProducer(const edm::ParameterSet& iConfig):
   _nBinsPhi(iConfig.getParameter<unsigned int>("nBinsPhi")),
   _lsb(iConfig.getParameter<double>("lsb")),
   _lsb_pt(iConfig.getParameter<double>("lsb_pt")),
-  _phiLow_hls(iConfig.getParameter<double>("phiLow") / _lsb),
-  _phiUp_hls(iConfig.getParameter<double>("phiUp") / _lsb),
-  _etaLow_hls(iConfig.getParameter<double>("etaLow") / _lsb),
-  _etaUp_hls(iConfig.getParameter<double>("etaUp") / _lsb),
-  _htPtThreshold_hls(iConfig.getParameter<double>("htPtThreshold") / _lsb_pt),
+  _phiLow(iConfig.getParameter<double>("phiLow")),
+  _phiUp(iConfig.getParameter<double>("phiUp")),
+  _etaLow(iConfig.getParameter<double>("etaLow")),
+  _etaUp(iConfig.getParameter<double>("etaUp")),
+  _htPtThreshold(iConfig.getParameter<double>("htPtThreshold")),
   _outputCollectionName(iConfig.getParameter<std::string>("outputCollectionName"))
   
 
 {
+  _phiLow_hls = _phiLow/_lsb;
+  _phiUp_hls = _phiUp/_lsb;
+  _etaUp_hls = _etaUp/_lsb;
+  _etaLow_hls = _etaLow/_lsb;
+  _htPtThreshold_hls = _htPtThreshold/_lsb_pt;
   // three things are happening in this line:
   // 1) retrieving the tag for the input particle collection with "iConfig.getParameter(string)"
   // 2) telling CMSSW that I will retrieve a collection of pf candidates later with "consumes< edm::View<reco::Candidate>(InputTag)"
@@ -122,9 +132,9 @@ Phase1L1TSumsProducer::Phase1L1TSumsProducer(const edm::ParameterSet& iConfig):
   this -> _particleCollectionTag = new edm::EDGetTokenT< edm::View<reco::Candidate> >(consumes< edm::View<reco::Candidate> > (iConfig.getParameter< edm::InputTag >("particleCollectionTag")));  
   // same thing here, I am setting myself up to access jets down the road
   this -> _jetCollectionTag = new edm::EDGetTokenT< std::vector<reco::CaloJet> >(consumes< std::vector<reco::CaloJet> > (iConfig.getParameter< edm::InputTag >("jetCollectionTag")));  
-  std::cout<<"nBinsPhi: " <<this->_nBinsPhi << std::endl;
-  std::cout<<"phiUp: " <<this->_phiUp_hls << std::endl;
-  std::cout<<"phiLow: " <<this->_phiLow_hls << std::endl;
+  //std::cout<< "nBinsPhi: " << this->_nBinsPhi << std::endl;
+  //std::cout<< "phiUp: " << this->_phiUp_hls << std::endl;
+  //std::cout<< "phiLow: " << this->_phiLow_hls << std::endl;
   
 
   this -> _phiStep_hls = static_cast<int>( this -> _phiUp_hls - this -> _phiLow_hls ) / this -> _nBinsPhi;
@@ -171,9 +181,10 @@ void Phase1L1TSumsProducer::produce(edm::Event& iEvent, const edm::EventSetup& i
   lSumVectorPtr -> push_back(0, lHT);
   lSumVectorPtr -> push_back(0, lMET);
   lSumVectorPtr -> push_back(0, lMHT);
-  std::cout << "HT-MET sums prod: " << lHT.pt() << "\t" << lMET.pt() << std::endl;
-  std::cout << "MET-MHT sums prod: " << lMET.pt() << "\t" << lMHT.pt() << std::endl;
-  std::cout << "MHT sums prod: " << lMHT.pt() << std::endl;
+  //std::cout << "HT-MET sums prod: " << lHT.pt() << "\t" << lMET.pt() << std::endl;
+  //std::cout << "MET-MHT sums prod: " << lMET.pt() << "\t" << lMHT.pt() << std::endl;
+  //std::cout << "MHT sums prod: " << lMHT.pt() << std::endl;
+  
   //saving sums
   iEvent.put(std::move(lSumVectorPtr), this -> _outputCollectionName);
 
@@ -256,14 +267,6 @@ l1t::EtSum Phase1L1TSumsProducer::_computeMET(const ParticleCollection & particl
 
   double lMET = static_cast<int>(sqrt(static_cast<int>(lTotalPx * lTotalPx + lTotalPy * lTotalPy))) * _lsb_pt;
   
-  //ap_uint<32> lTotalParticleSquared = lTotalPx * lTotalPx + lTotalPy * lTotalPy;
-  //hls::sqrt_input<32, hls::CORDIC_FORMAT_USIG_INT>::in lMETSquaredCORDIC;
-  //hls::sqrt_output<17, hls::CORDIC_FORMAT_USIG_INT>::out lMETCORDIC;
-  //lMETSquaredCORDIC.in = lMETSquared;
-  //hls::sqrt<hls::CORDIC_FORMAT_USIG_INT, 32, 17, hls::CORDIC_ROUND_TRUNCATE>(lMETSquaredCORDIC, lMETCORDIC);
-  //ap_uint<16> lMET = lMETCORDIC.out; 
-  //double sMET = lMET * _lsb_pt;
-  
   
   //packing in EtSum object
   reco::Candidate::PolarLorentzVector lMETVector;
@@ -302,8 +305,8 @@ l1t::EtSum Phase1L1TSumsProducer::_computeMHT(const std::vector<reco::CaloJet>& 
     // retrieving sin cos from LUT emulator
     ap_ufixed<8, 1, AP_RND> lSinPhi = this -> _sinPhi_hls[iPhi];
     ap_ufixed<8, 1, AP_RND> lCosPhi = this -> _cosPhi_hls[iPhi];
-    std::cout << "lSinPhi: " << lSinPhi << std::endl;
-    std::cout << "lCosPhi: " << lCosPhi << std::endl;
+    //std::cout << "lSinPhi: " << lSinPhi << std::endl;
+    //std::cout << "lCosPhi: " << lCosPhi << std::endl;
    
     // checking if above threshold
     //lTotalJetPx += (jet.pt() >= this -> _htPtThreshold_hls) ? jet.pt() * lCosPhi : 0;
@@ -320,13 +323,7 @@ l1t::EtSum Phase1L1TSumsProducer::_computeMHT(const std::vector<reco::CaloJet>& 
 
   double lMHT = static_cast<int>(sqrt(static_cast<int>(lTotalJetPx * lTotalJetPx + lTotalJetPy * lTotalJetPy))) * _lsb_pt;
  
- //ap_uint<32> lTotalJetSquared = lTotalJetPx * lTotalJetPx + lTotalJetPy * lTotalJetPy;
-  //hls::sqrt_input<32, hls::CORDIC_FORMAT_USIG_INT>::in lMHTSquaredCORDIC;
-  //hls::sqrt_output<17, hls::CORDIC_FORMAT_USIG_INT>::out lMHTCORDIC;
-  //lMHTSquaredCORDIC.in = lMHTSquared;
-  //hls::sqrt<hls::CORDIC_FORMAT_USIG_INT, 32, 17, hls::CORDIC_ROUND_TRUNCATE>(lMHTSquaredCORDIC, lMHTCORDIC);
-  //ap_uint<16> lMHT = lMHTCORDIC.out; 
-  //double sMHT = lMHT * _lsb_pt;
+
 
   reco::Candidate::PolarLorentzVector lMHTVector;
   lMHTVector.SetPt(lMHT);
