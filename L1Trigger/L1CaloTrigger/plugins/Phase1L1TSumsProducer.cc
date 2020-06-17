@@ -80,19 +80,19 @@ class Phase1L1TSumsProducer : public edm::one::EDProducer<edm::one::SharedResour
       double _lsb;
       double _lsb_pt;
       // lower phi value
-      ap_uint<8> _phiLow_hls;
+      ap_uint<10> _phiLow_hls;
       double _phiLow;
       // higher phi value
-      ap_uint<8> _phiUp_hls;
+      ap_uint<10> _phiUp_hls;
       double _phiUp;
       // lower eta value
-      ap_uint<8> _etaLow_hls;
+      ap_uint<10> _etaLow_hls;
       double _etaLow;
       // higher eta value
-      ap_uint<8> _etaUp_hls;
+      ap_uint<10> _etaUp_hls;
       double _etaUp;
       // size of a phi bin
-      ap_uint<8> _phiStep_hls;
+      ap_uint<10> _phiStep_hls;
       // threshold for ht calculation
       ap_uint<16>_htPtThreshold_hls;
       double _htPtThreshold;
@@ -200,9 +200,9 @@ l1t::EtSum Phase1L1TSumsProducer::_computeHT(const std::vector<reco::CaloJet>& l
   // range-based for loop that goes through all the trigger jets in the event
   for (const auto & jet: l1jetVector)
   {
-    ap_uint<16> lJetPt = jet.pt();
-    ap_uint<8> lJetPhi = jet.phi();
-    ap_uint<8> lJetEta = jet.eta();
+    ap_uint<16> lJetPt = jet.pt() * _lsb_pt;
+    ap_uint<8> lJetPhi = jet.phi() * _lsb;
+    ap_uint<8> lJetEta = jet.eta() * _lsb;
     if 
     (
       (lJetPhi < this -> _phiLow_hls) ||
@@ -242,9 +242,9 @@ l1t::EtSum Phase1L1TSumsProducer::_computeMET(const ParticleCollection & particl
   // range-based for loop, that goes through the particle flow inputs
   for (const auto & particle : particleCollection)
   {
-    ap_uint<8> lParticlePhi = particle.phi();
-    ap_uint<8> lParticleEta = particle.eta();
-    ap_uint<16> lParticlePt = particle.pt();
+    ap_uint<8> lParticlePhi = particle.phi() * _lsb;
+    ap_uint<8> lParticleEta = particle.eta() * _lsb;
+    ap_uint<16> lParticlePt = particle.pt() * _lsb_pt;
     // skip particle if it does not fall in the range
     if 
     (
@@ -294,8 +294,8 @@ l1t::EtSum Phase1L1TSumsProducer::_computeMHT(const std::vector<reco::CaloJet>& 
 
   for (const auto & jet: l1jetVector)
   { 
-    ap_uint<16> lJetPhi = jet.phi();
-    ap_uint<16> lJetPt = jet.pt();
+    ap_uint<8> lJetPhi = jet.phi() * _lsb;
+    ap_uint<16> lJetPt = jet.pt() * _lsb_pt;
     
 
     if ((lJetPhi < this -> _phiLow_hls) || (lJetPhi >= this -> _phiUp_hls)) continue;

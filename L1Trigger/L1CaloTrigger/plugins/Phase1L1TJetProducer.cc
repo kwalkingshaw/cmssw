@@ -91,8 +91,8 @@ class Phase1L1TJetProducer : public edm::one::EDProducer<edm::one::SharedResourc
       unsigned int _nBinsPhi;
       double _phiLow;
       double _phiUp;
-      ap_uint<8> _phiLow_hls;
-      ap_uint<8> _phiUp_hls;
+      ap_uint<10> _phiLow_hls;
+      ap_uint<10> _phiUp_hls;
       unsigned int _jetIEtaSize;
       unsigned int _jetIPhiSize;
       ap_uint<16> _seedPtThreshold_hls;
@@ -360,7 +360,7 @@ reco::CaloJet Phase1L1TJetProducer::_buildJetFromSeed(const TH2F & caloGrid, con
   // Creating a jet with eta phi centered on the seed and momentum equal to the sum of the pt of the components    
   //reco::Candidate::LorentzVector ptVector;
   reco::Candidate::PolarLorentzVector ptVector;
-  ptVector.SetPt(ptSum);
+  ptVector.SetPt(ptSum * _lsb_pt);
   //ptVector.SetPtEtaPhiE(ptSum, caloGrid.GetXaxis() -> GetBinCenter(iEta), caloGrid.GetYaxis() -> GetBinCenter(iPhi), ptSum);
   ptVector.SetEta( caloGrid.GetXaxis() -> GetBinCenter( iEta ) * _lsb );
   ptVector.SetPhi( caloGrid.GetYaxis() -> GetBinCenter( iPhi ) * _lsb );
@@ -444,8 +444,8 @@ void Phase1L1TJetProducer::_fillCaloGrid(TH2F & caloGrid, const Container & trig
       primitiveIterator -> eta() > _etaBinning.front() &&
       primitiveIterator -> eta() < _etaBinning.back()){
         ap_uint<16> pt = static_cast<int>(primitiveIterator -> pt() / _lsb_pt);
-        ap_uint<8> eta = static_cast<int>(primitiveIterator -> eta() / _lsb);
-        ap_uint<8> phi = static_cast<int>(primitiveIterator -> phi() / _lsb);
+        ap_uint<10> eta = static_cast<int>(primitiveIterator -> eta() / _lsb);
+        ap_uint<10> phi = static_cast<int>(primitiveIterator -> phi() / _lsb);
         caloGrid.Fill(eta, phi, pt);
         
       // caloGrid.Fill((float) primitiveIterator -> eta(), (float) primitiveIterator -> phi(), (float) primitiveIterator -> pt());

@@ -116,9 +116,9 @@ hardware_MET = array("f", [0])
 hardware_HT = array("f", [0]) 
 hardware_length = array("i", [0])
 
-emulator_jetPt = array("f", 3*[0])
-emulator_jetEta = array("f", 3*[0]) 
-emulator_jetPhi = array("f", 3*[0]) 
+emulator_jetPt = array("f", 4*[0])
+emulator_jetEta = array("f", 4*[0]) 
+emulator_jetPhi = array("f", 4*[0]) 
 emulator_MHT = array("f", [0]) 
 emulator_MET = array("f", [0]) 
 emulator_HT = array("f", [0]) 
@@ -271,8 +271,8 @@ for evIt in range(0,nHw):
       for hwJet in hwData[evIt]:
         for emJet in emData[evIt]:
           if hwJet[0] == emJet[0]:
-            if (hwJet[1]-emJet[1])<dR:
-              if (hwJet[2]-emJet[2])<dR:
+            if abs(hwJet[1]-emJet[1])<dR:
+              if abs(hwJet[2]-emJet[2])<dR:
                 goodJet+=1
       # mark event as bad if not all jets are matched
       if goodJet < len(hwData[evIt]):
