@@ -214,7 +214,8 @@ void Phase1L1TJetProducer::produce(edm::Event& iEvent, const edm::EventSetup& iS
     {
       l1jetVector = this -> _buildJetsFromSeeds(lCaloGrid, seedsVector);
     }
-
+    
+    std::cout << "l1jetVector Size: " << l1jetVector.size() << std::endl;
     //saving jets
     std::unique_ptr< std::vector<reco::CaloJet> > l1jetVectorPtr(new std::vector<reco::CaloJet>(l1jetVector));
     iEvent.put(std::move(l1jetVectorPtr), this -> _outputCollectionName);
@@ -361,8 +362,8 @@ reco::CaloJet Phase1L1TJetProducer::_buildJetFromSeed(const TH2F & caloGrid, con
   reco::Candidate::PolarLorentzVector ptVector;
   ptVector.SetPt(ptSum);
   //ptVector.SetPtEtaPhiE(ptSum, caloGrid.GetXaxis() -> GetBinCenter(iEta), caloGrid.GetYaxis() -> GetBinCenter(iPhi), ptSum);
-  ptVector.SetEta(caloGrid.GetXaxis() -> GetBinCenter(iEta * 19 + 9 * _lsb));
-  ptVector.SetPhi(caloGrid.GetYaxis() -> GetBinCenter(iPhi * 20 + 10 * _lsb));
+  ptVector.SetEta( caloGrid.GetXaxis() -> GetBinCenter( iEta ) * _lsb );
+  ptVector.SetPhi( caloGrid.GetYaxis() -> GetBinCenter( iPhi ) * _lsb );
   // ptVector.SetEta(iEta);
   // ptVector.SetPhi(iPhi);
   reco::CaloJet jet;
@@ -429,13 +430,14 @@ void Phase1L1TJetProducer::_fillCaloGrid(TH2F & caloGrid, const Container & trig
       // {
       //   std::cout << "input pt-eta-phi: " << (float) primitiveIterator -> pt() << "\t" <<(float) primitiveIterator -> eta() << "\t" << (float) primitiveIterator -> phi() << std::endl;
       // }
-      std::cout << "pt: " << primitiveIterator -> pt() << std::endl;
-      std::cout << "eta: " << primitiveIterator -> eta() << std::endl;
-      std::cout << "phi: " << primitiveIterator -> phi() << std::endl;
-      std::cout << "phiLow: " << _phiLow << std::endl;
-      std::cout << "phiUp: " << _phiUp << std::endl;
-      std::cout << "etaBinning.front: " << _etaBinning.front() << std::endl;
-      std::cout << "etaBinning.back: " << _etaBinning.back() << std::endl;
+      
+      //std::cout << "pt: " << primitiveIterator -> pt() << std::endl;
+      //std::cout << "eta: " << primitiveIterator -> eta() << std::endl;
+      //std::cout << "phi: " << primitiveIterator -> phi() << std::endl;
+      //std::cout << "phiLow: " << _phiLow << std::endl;
+      //std::cout << "phiUp: " << _phiUp << std::endl;
+      //std::cout << "etaBinning.front: " << _etaBinning.front() << std::endl;
+      //std::cout << "etaBinning.back: " << _etaBinning.back() << std::endl;
       
       if(primitiveIterator -> phi() > _phiLow &&
       primitiveIterator -> phi() < _phiUp &&
