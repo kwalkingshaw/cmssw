@@ -242,36 +242,43 @@ l1t::EtSum Phase1L1TSumsProducer::_computeMET(const ParticleCollection & particl
   // range-based for loop, that goes through the particle flow inputs
   for (const auto & particle : particleCollection)
   {
-    ap_uint<8> lParticlePhi = particle.phi() / _lsb;
-    ap_uint<8> lParticleEta = particle.eta() / _lsb;
-    ap_uint<16> lParticlePt = particle.pt() / _lsb_pt;
     // skip particle if it does not fall in the range
     if 
     (
-      (lParticlePhi < this -> _phiLow_hls) ||
-      (lParticlePhi >= this -> _phiUp_hls)  ||
-      (lParticleEta < this -> _etaLow_hls)  ||
-      (lParticleEta >= this -> _etaUp_hls)  
-    ) continue;
-    // computing bin index
-    unsigned int iPhi = ( lParticlePhi - this -> _phiLow_hls ) / this -> _phiStep_hls;
-    // retrieving sin cos from LUT emulator
-    ap_ufixed<8, 1, AP_RND> lSinPhi = this -> _sinPhi_hls[iPhi];
-    ap_ufixed<8, 1, AP_RND> lCosPhi = this -> _cosPhi_hls[iPhi];
-    // computing px and py of the particle and adding it to the total px and py of the event
-    lTotalPx += (lParticlePt * lCosPhi);
-    lTotalPy += (lParticlePt * lSinPhi);
+      (particle.phi() > this -> _phiLow) &&
+      (particle.phi() <= this -> _phiUp) &&
+      (particle.eta() > this -> _etaLow) &&
+      (particle.eta() <= this -> _etaUp)  
+    ){
+      ap_uint<8> lParticlePhi = particle.phi() / _lsb;
+      ap_uint<8> lParticleEta = particle.eta() / _lsb;
+      ap_uint<16> lParticlePt = particle.pt() / _lsb_pt;
+
+      // computing bin index
+      unsigned int iPhi = ( lParticlePhi - this -> _phiLow_hls ) / this -> _phiStep_hls;
+      // retrieving sin cos from LUT emulator
+      ap_ufixed<8, 1, AP_RND> lSinPhi = this -> _sinPhi_hls[iPhi];
+      ap_ufixed<8, 1, AP_RND> lCosPhi = this -> _cosPhi_hls[iPhi];
+      // computing px and py of the particle and adding it to the total px and py of the event
+      lTotalPx += (lParticlePt * lCosPhi);
+      lTotalPy += (lParticlePt * lSinPhi);
+      
+    }
+    
  
 
   }
-
+  
   double lMET = static_cast<int>(sqrt(static_cast<int>(lTotalPx * lTotalPx + lTotalPy * lTotalPy))) * _lsb_pt;
   
   
   //packing in EtSum object
   reco::Candidate::PolarLorentzVector lMETVector;
   // double lCosMETPhi = lTotalPx/lMET;
-  lMETVector.SetPxPyPzE(lTotalPx, lTotalPy, 0, lMET);
+  lMETVector.SetPxPyPzE(lTotalPx * _lsb_pt, lTotalPy * _lsb_pt, 0, lMET);
+  
+
+  //lMETVector.SetPt(lMET);
   //lMETVector.SetEta(0);
   //lMETVector.SetPhi(0);
   // kMissingEt is the enumerator for MET

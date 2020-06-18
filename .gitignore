@@ -1,4 +1,5 @@
 __init__.py
+<<<<<<< HEAD
 *.pyc
 .*.swp
 .#*
@@ -11,3 +12,15 @@ __init__.py
 *.root
 *.out
 *.dat
+=======
+*.exe
+*.pyc
+.*.swp
+.#*
+_*
+*.root
+*.pickle
+#*#
+*~
+.vscode
+>>>>>>> simonecid/master

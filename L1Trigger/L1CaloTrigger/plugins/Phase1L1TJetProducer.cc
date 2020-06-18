@@ -215,7 +215,7 @@ void Phase1L1TJetProducer::produce(edm::Event& iEvent, const edm::EventSetup& iS
       l1jetVector = this -> _buildJetsFromSeeds(lCaloGrid, seedsVector);
     }
     
-    std::cout << "l1jetVector Size: " << l1jetVector.size() << std::endl;
+    //std::cout << "l1jetVector Size: " << l1jetVector.size() << std::endl;
     //saving jets
     std::unique_ptr< std::vector<reco::CaloJet> > l1jetVectorPtr(new std::vector<reco::CaloJet>(l1jetVector));
     iEvent.put(std::move(l1jetVectorPtr), this -> _outputCollectionName);
