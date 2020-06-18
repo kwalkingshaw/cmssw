@@ -27,6 +27,7 @@ nEvents = 50000 # number of events to analyse
 hardwareOutputFile = TFile("DataEmuComparison.root", "RECREATE") # root file where data-emu stuff will be saved
 emulatorOutputFile = TFile("CMSSWSums.root") # root file where to read emulator CMSSW output
 nTxFiles = 1000
+maxNumberOfJetsPerEvent = 6 # max number of jets per event, better to overestimate rather than underestimate, if in doubt
 
 # DO NOT EDIT, data containers for later
 hwJets = [] 
@@ -108,17 +109,17 @@ sumsTree = TTree("Sums", "Flat tree with sums in output from hardware and emulat
 
 # preparing data holders
 
-hardware_jetPt = array("f", 3*[0])
-hardware_jetEta = array("f", 3*[0]) 
-hardware_jetPhi = array("f", 3*[0]) 
+hardware_jetPt = array("f", maxNumberOfJetsPerEvent*[0])
+hardware_jetEta = array("f", maxNumberOfJetsPerEvent*[0]) 
+hardware_jetPhi = array("f", maxNumberOfJetsPerEvent*[0]) 
 hardware_MHT = array("f", [0]) 
 hardware_MET = array("f", [0]) 
 hardware_HT = array("f", [0]) 
 hardware_length = array("i", [0])
 
-emulator_jetPt = array("f", 3*[0])
-emulator_jetEta = array("f", 3*[0]) 
-emulator_jetPhi = array("f", 3*[0]) 
+emulator_jetPt = array("f", maxNumberOfJetsPerEvent*[0])
+emulator_jetEta = array("f", maxNumberOfJetsPerEvent*[0]) 
+emulator_jetPhi = array("f", maxNumberOfJetsPerEvent*[0]) 
 emulator_MHT = array("f", [0]) 
 emulator_MET = array("f", [0]) 
 emulator_HT = array("f", [0]) 
@@ -190,7 +191,7 @@ for iEv in range(0, nEvents):
   # write hardware event
   hardware_length[0] = len(hwData[iEv])
   
-  for iJet in range(0, 3):
+  for iJet in range(0, maxNumberOfJetsPerEvent):
     # write hw event in array structure
     hardware_jetPt[iJet]  = hwData[iEv][iJet][0] if iJet < hardware_length[0] else 0
     hardware_jetEta[iJet] = hwData[iEv][iJet][1] if iJet < hardware_length[0] else 0
@@ -271,8 +272,8 @@ for evIt in range(0,nHw):
       for hwJet in hwData[evIt]:
         for emJet in emData[evIt]:
           if hwJet[0] == emJet[0]:
-            if (hwJet[1]-emJet[1])<dR:
-              if (hwJet[2]-emJet[2])<dR:
+            if abs(hwJet[1]-emJet[1])<dR:
+              if abs(hwJet[2]-emJet[2])<dR:
                 goodJet+=1
       # mark event as bad if not all jets are matched
       if goodJet < len(hwData[evIt]):
