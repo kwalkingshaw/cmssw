@@ -15,7 +15,7 @@ process.TFileService = cms.Service('TFileService', fileName = cms.string("CMSSWS
 
 process.source = cms.Source("PoolSource",
   fileNames = cms.untracked.vstring("file:/hdfs/user/sb17498/CMS_Phase_2/jetMETStudies/TTBar_200_10_4_0_MTD/TTBar_PU200.root"),
-  #skipEvents=cms.untracked.uint32(1)
+  #skipEvents=cms.untracked.uint32(639)
 )
 
 

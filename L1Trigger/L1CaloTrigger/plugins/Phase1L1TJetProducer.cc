@@ -361,7 +361,8 @@ reco::CaloJet Phase1L1TJetProducer::_buildJetFromSeed(const TH2F & caloGrid, con
   //reco::Candidate::LorentzVector ptVector;
   reco::Candidate::PolarLorentzVector ptVector;
   ptVector.SetPt(ptSum * _lsb_pt);
-  //ptVector.SetPtEtaPhiE(ptSum, caloGrid.GetXaxis() -> GetBinCenter(iEta), caloGrid.GetYaxis() -> GetBinCenter(iPhi), ptSum);
+  std::cout << "Emulator Jet Pt: " << ptSum * _lsb_pt << std::endl;
+  //ptVector.SetPtEtaPhiE(ptSum, caloGrid.GetXaxis() -> GetVczldd304!Center(iEta), caloGrid.GetYaxis() -> GetBinCenter(iPhi), ptSum);
   ptVector.SetEta( caloGrid.GetXaxis() -> GetBinCenter( iEta ) * _lsb );
   ptVector.SetPhi( caloGrid.GetYaxis() -> GetBinCenter( iPhi ) * _lsb );
   // ptVector.SetEta(iEta);
@@ -439,19 +440,34 @@ void Phase1L1TJetProducer::_fillCaloGrid(TH2F & caloGrid, const Container & trig
       //std::cout << "etaBinning.front: " << _etaBinning.front() << std::endl;
       //std::cout << "etaBinning.back: " << _etaBinning.back() << std::endl;
       
-      if(primitiveIterator -> phi() > _phiLow &&
+      if(primitiveIterator -> phi() >= _phiLow &&
       primitiveIterator -> phi() < _phiUp &&
-      primitiveIterator -> eta() > _etaBinning.front() &&
+      primitiveIterator -> eta() >= _etaBinning.front() &&
       primitiveIterator -> eta() < _etaBinning.back()){
         ap_uint<16> pt = static_cast<int>(primitiveIterator -> pt() / _lsb_pt);
-        ap_uint<10> eta = static_cast<int>(primitiveIterator -> eta() / _lsb);
         ap_uint<10> phi = static_cast<int>(primitiveIterator -> phi() / _lsb);
+        ap_uint<10> eta = static_cast<int>(primitiveIterator -> eta() / _lsb);
+        
+        //if (primitiveIterator -> eta() >= 0.75 && primitiveIterator -> eta() < 1.5) {
+          //ap_uint<10> eta = static_cast<int>((((primitiveIterator -> eta()) - 0.75) / _lsb) + 171);
+
+        //} else {
+          //ap_uint<10> eta = static_cast<int>(primitiveIterator -> eta() / _lsb);
+        //}
+        if ( eta > caloGrid.GetXaxis()->GetBinCenter( caloGrid.GetNbinsX() ) ) {
+          eta = caloGrid.GetXaxis()->GetBinCenter( caloGrid.GetNbinsX() );
+        }
+
+        if ( phi > caloGrid.GetYaxis()->GetBinCenter(caloGrid.GetNbinsY())) {
+          phi =   caloGrid.GetYaxis()->GetBinCenter(caloGrid.GetNbinsY());        
+        }
         caloGrid.Fill(eta, phi, pt);
         
       // caloGrid.Fill((float) primitiveIterator -> eta(), (float) primitiveIterator -> phi(), (float) primitiveIterator -> pt());
       }
     }
   return;
+
 }
 
 void
