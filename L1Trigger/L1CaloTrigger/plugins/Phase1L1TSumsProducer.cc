@@ -270,7 +270,7 @@ l1t::EtSum Phase1L1TSumsProducer::_computeMET(const ParticleCollection & particl
   }
   
   double lMET = static_cast<int>(sqrt(static_cast<int>(lTotalPx * lTotalPx + lTotalPy * lTotalPy))) * _lsb_pt;
-  
+  std::cout << "lMET: " << lMET << std::endl;
   
   //packing in EtSum object
   reco::Candidate::PolarLorentzVector lMETVector;

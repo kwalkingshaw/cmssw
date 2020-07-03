@@ -361,7 +361,7 @@ reco::CaloJet Phase1L1TJetProducer::_buildJetFromSeed(const TH2F & caloGrid, con
   //reco::Candidate::LorentzVector ptVector;
   reco::Candidate::PolarLorentzVector ptVector;
   ptVector.SetPt(ptSum * _lsb_pt);
-  std::cout << "Emulator Jet Pt: " << ptSum * _lsb_pt << std::endl;
+  //std::cout << "Emulator Jet Pt: " << ptSum * _lsb_pt << std::endl;
   //ptVector.SetPtEtaPhiE(ptSum, caloGrid.GetXaxis() -> GetVczldd304!Center(iEta), caloGrid.GetYaxis() -> GetBinCenter(iPhi), ptSum);
   ptVector.SetEta( caloGrid.GetXaxis() -> GetBinCenter( iEta ) * _lsb );
   ptVector.SetPhi( caloGrid.GetYaxis() -> GetBinCenter( iPhi ) * _lsb );
