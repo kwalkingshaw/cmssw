@@ -34,7 +34,7 @@ process.maxEvents = cms.untracked.PSet(
 
 process.source = process.source = cms.Source("PoolSource",
   # fileNames = cms.untracked.vstring( 'file:SingleNu_big.root' )
-  fileNames = cms.untracked.vstring( 'file:TTbar_QCD_big.root' )
+  fileNames = cms.untracked.vstring( 'file:myOutputFile.root' )
 )
 
 

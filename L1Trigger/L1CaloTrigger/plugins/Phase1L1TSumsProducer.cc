@@ -258,7 +258,7 @@ l1t::EtSum Phase1L1TSumsProducer::_computeMHT(const std::vector<reco::CaloJet>& 
   double lMHT = floor( sqrt(lTotalJetPx * lTotalJetPx + lTotalJetPy * lTotalJetPy) ) * 0.25;
 
   // math::XYZTLorentzVector lMHTVector( lTotalJetPx, lTotalJetPy, 0, digi_lMHT * 0.25 );
-  math::PtEtaPhiMLorentzVector lMHTVector( lMHT, 0, lTotalJetPx / ( lMHT / 0.25 ), 0 );
+  math::PtEtaPhiMLorentzVector lMHTVector( lMHT, 0, acos(lTotalJetPx / ( lMHT / 0.25 )), 0 );
   l1t::EtSum lMHTSum(lMHTVector, l1t::EtSum::EtSumType::kMissingHt, 0, 0, 0, 0 );
   // kTotalMHT the the EtSum enumerator type for the MHT
   // l1t::EtSum lMHTSum(lMHTVector, l1t::EtSum::EtSumType::kMissingHt, 0, 0, 0, 0 );

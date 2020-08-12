@@ -1,5 +1,6 @@
 #include "L1Trigger/L1TNtuples/interface/L1AnalysisPhaseIPFJet.h"
 #include "DataFormats/JetReco/interface/GenJetCollection.h"
+#include "Math/Vector4Dfwd.h"
 
 L1Analysis::L1AnalysisPhaseIPFJet::L1AnalysisPhaseIPFJet()
 {
@@ -66,22 +67,36 @@ void L1Analysis::L1AnalysisPhaseIPFJet::SetPhaseIPFJetSums  (const edm::Handle< 
     // else if ( sumType == l1t::EtSum::kMissingEtHF ) {
     //   l1extra_.phaseIPFJetMETHF = sumItr->pt();     
     // }
+
+    else if ( sumType == l1t::EtSum::kMissingHt){
+      l1extra_.phaseIPFJetMHT = sumItr->pt();
+      std::cout << "phaseIPFJetMHT:  " << l1extra_.phaseIPFJetMHT << std::endl;
+    }
   } 
 }
 
 void L1Analysis::L1AnalysisPhaseIPFJet::SetPFJet(const edm::Handle< vector<l1t::PFJet> > ak4PFJets, unsigned maxL1Extra)
 {
+  ROOT::Math::PxPyPzEVector myLorentzVector(0, 0, 0, 0);
 
   for (unsigned int i=0; i<ak4PFJets->size() && l1extra_.nPhaseIPFJets<maxL1Extra; i++){
     if (ak4PFJets->at(i).pt()>0){
-      if(ak4PFJets->at(i).pt()>30 && abs(ak4PFJets->at(i).eta())<2.4)
-	    l1extra_.ak4PFJetHt += ak4PFJets->at(i).pt();
+      if(ak4PFJets->at(i).pt()>30 && abs(ak4PFJets->at(i).eta())<2.4){
+	      l1extra_.ak4PFJetHt += ak4PFJets->at(i).pt();
+        
+        myLorentzVector += ak4PFJets->at(i).p4();
+        
+      }
       l1extra_.ak4PFJetEt .push_back(ak4PFJets->at(i).pt());
       l1extra_.ak4PFJetEta.push_back(ak4PFJets->at(i).eta());
       l1extra_.ak4PFJetPhi.push_back(ak4PFJets->at(i).phi());
       l1extra_.nAK4PFJets++;
+      
+      
     }
   }
+  l1extra_.ak4PFJetMHT = myLorentzVector.pt();
+  std::cout << "ak4PFJetMHT:  " << l1extra_.ak4PFJetMHT << std::endl;
 }
 
 void L1Analysis::L1AnalysisPhaseIPFJet::SetPFMET(const edm::Handle<reco::PFMETCollection> pfMET)
@@ -92,18 +107,30 @@ void L1Analysis::L1AnalysisPhaseIPFJet::SetPFMET(const edm::Handle<reco::PFMETCo
 
 void L1Analysis::L1AnalysisPhaseIPFJet::SetGenJet(const edm::Handle<reco::GenJetCollection> genJets, unsigned maxL1Extra)
 {
+  ROOT::Math::PxPyPzEVector myLorentzVector(0, 0, 0, 0);
 
   reco::GenJetCollection::const_iterator genJetItr = genJets->begin();
   reco::GenJetCollection::const_iterator genJetEnd = genJets->end();
   for( ; genJetItr != genJetEnd ; ++genJetItr) {
-    if(genJetItr->pt()>30 && abs(genJetItr->eta())<2.4)
+    
+    if(genJetItr->pt()>30 && abs(genJetItr->eta())<2.4){
       l1extra_.genJetHt += genJetItr->pt();
+      //std::cout << "Gen jet : " << genJetItr->pt() << " " << genJetItr->px() << " " << genJetItr->p4() << " " << genJetItr->p4().pt() << std::endl;  
+    
+
+      myLorentzVector += genJetItr->p4();
+    }
     l1extra_.genJetPt.push_back( genJetItr->pt() );
     l1extra_.genJetEta.push_back( genJetItr->eta() );
     l1extra_.genJetPhi.push_back( genJetItr->phi() );
     l1extra_.genJetM.push_back( genJetItr->mass() );
-    l1extra_.nGenJet++;
+    l1extra_.nGenJet++; 
+    
   }
+  l1extra_.genJetMHT = myLorentzVector.pt(); 
+ 
+  //std::cout << "myLorentzVector : " << myLorentzVector << std::endl;
+  std::cout << "genJetMHT:  " << l1extra_.genJetMHT << std::endl;
 }
 
 void L1Analysis::L1AnalysisPhaseIPFJet::SetGenMET(const edm::Handle<reco::GenMETCollection> genMET)

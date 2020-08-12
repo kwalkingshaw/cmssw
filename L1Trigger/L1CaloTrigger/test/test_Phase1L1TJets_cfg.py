@@ -16,14 +16,14 @@ process.SaveSums = cms.EDAnalyzer("SaveGenSumsAndL1Sums",
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10000) )
 
 # fileList = FileUtils.loadListFromFile('ttbar.list')
 # readFiles = cms.untracked.vstring(*fileList)
 
 process.source = cms.Source("PoolSource",
-  # fileNames = cms.untracked.vstring("file:/hdfs/user/sb17498/CMS_Phase_2/jetMETStudies/QCD_TTBar_PU200_10_4_0_MTD/TTBAR_QCD_Merged.root"),
-  fileNames = cms.untracked.vstring("file:/hdfs/user/sb17498/CMS_Phase_2/jetMETStudies/SingleNeutrino_PU200_104XMTD/SingleNeutrino_PU200.root"),
+  fileNames = cms.untracked.vstring("file:/hdfs/user/sb17498/CMS_Phase_2/jetMETStudies/QCD_TTBar_PU200_10_4_0_MTD/TTBAR_QCD_Merged.root"),
+  #fileNames = cms.untracked.vstring("file:/hdfs/user/sb17498/CMS_Phase_2/jetMETStudies/SingleNeutrino_PU200_104XMTD/SingleNeutrino_PU200.root"),
   #fileNames = cms.untracked.vstring(
   #  "file:pf500.root",
   #)

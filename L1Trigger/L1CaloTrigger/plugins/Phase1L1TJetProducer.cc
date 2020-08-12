@@ -656,7 +656,7 @@ l1t::EtSum Phase1L1TJetProducer::_computeMET( const TH2F & caloGrid, double etaC
   }
 
   // math::XYZTLorentzVector lMETVector( ( totalDigiPx ) * 0.25,  ( totalDigiPy ) * 0.25, 0, lMET);
-  math::PtEtaPhiMLorentzVector lMETVector( lMET, 0, totalDigiPx / ( lMET / 0.25 ), 0 );
+  math::PtEtaPhiMLorentzVector lMETVector( lMET, 0, acos(totalDigiPx / ( lMET / 0.25 )), 0 );
   l1t::EtSum lMETSum(lMETVector, l1t::EtSum::EtSumType::kMissingEt, 0, 0, 0, 0 );
   // std::cout << lMETVector.pt() << " == " << lMET << "?" << std::endl;
 
