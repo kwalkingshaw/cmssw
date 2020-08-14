@@ -27,6 +27,7 @@ process.source = cms.Source("PoolSource",
   #fileNames = cms.untracked.vstring(
   #  "file:pf500.root",
   #)
+  # skipEvents = cms.untracked.uint32(181)
 )
 
 # Loads 7x7 sequence
@@ -44,7 +45,7 @@ process.load('L1Trigger.Phase2L1ParticleFlow.l1pfJetMet_cff')
 process.l1PFJets = cms.Sequence( process.ak4PFL1Puppi + process.ak4PFL1PuppiCorrected )
 
 process.out = cms.OutputModule("PoolOutputModule",
-  fileName = cms.untracked.string('myOutputFile.root'),
+  fileName = cms.untracked.string('myOutputFile_debug.root'),
   outputCommands = cms.untracked.vstring(
     "drop *",
     "keep *_Phase1L1TJetProducer*_*_*",
@@ -53,7 +54,8 @@ process.out = cms.OutputModule("PoolOutputModule",
     "keep *_Phase1L1TSumsProducer*_*_*",
     "keep *_ak4PFL1Puppi*_*_*",
     "keep *_l1PFMetPuppi*_*_*",
-    "keep *_genMetTrue_*_*",
+    "keep *_genMetTrue_*_*"
+    # "keep nanoaodFlatTable_*Table_*_*"
   ),
 )
 
@@ -64,9 +66,37 @@ process.out = cms.OutputModule("PoolOutputModule",
 #   l1tHTCollectionTag = cms.InputTag("", "", "")
 # )
 
-process.p = cms.Path(process.Phase1L1TJetsSequence * process.Phase1L1TJetsSequence9x9 * process.Phase1L1TJetsSequence9x9trimmed * process.l1PFJets * process.l1PFMetPuppi )
+# process.l1pfjetTable = cms.EDProducer("L1PFJetTableProducer",
+#     gen = cms.InputTag("ak4GenJetsNoNu"),
+#     commonSel = cms.string("pt > 5 && abs(eta) < 5.0"),
+#     drMax = cms.double(0.2),
+#     minRecoPtOverGenPt = cms.double(0.1),
+#     jets = cms.PSet(
+#         Gen = cms.InputTag("ak4GenJetsNoNu"),
+#         Gen_sel = cms.string("pt > 15"),
+#         AK4 = cms.InputTag("ak4PFL1Puppi"),
+#         # SeedCone = cms.InputTag("scL1Puppi"),
+#         PhaseI7x7 = cms.InputTag("Phase1L1TJetProducer", "UncalibratedPhase1L1TJetFromPfCandidates"),
+#         PhaseI9x9 = cms.InputTag("Phase1L1TJetProducer9x9", "UncalibratedPhase1L1TJetFromPfCandidates"),
+#         PhaseI9x9trimmed = cms.InputTag("Phase1L1TJetProducer9x9trimmed", "UncalibratedPhase1L1TJetFromPfCandidates")
+#     ),
+#     moreVariables = cms.PSet(
+#     ),
+# )
 
-process.e = cms.EndPath(process.out)
+# process.outnano = cms.OutputModule("NanoAODOutputModule",
+#     fileName = cms.untracked.string("perfNano.root"),
+#     SelectEvents = cms.untracked.PSet(SelectEvents = cms.vstring('p')),
+#     outputCommands = cms.untracked.vstring("drop *", "keep nanoaodFlatTable_*Table_*_*"),
+#     compressionLevel = cms.untracked.int32(4),
+#     compressionAlgorithm = cms.untracked.string("ZLIB"),
+# )
+
+# process.p = cms.Path(process.Phase1L1TJetsSequence * process.Phase1L1TJetsSequence9x9 * process.Phase1L1TJetsSequence9x9trimmed * process.l1PFJets * process.l1PFMetPuppi * process.l1pfjetTable )
+process.p = cms.Path(process.Phase1L1TJetsSequence * process.Phase1L1TJetsSequence9x9 * process.Phase1L1TJetsSequence9x9trimmed * process.l1PFJets * process.l1PFMetPuppi )
+# process.p = cms.Path(process.Phase1L1TJetsSequence )
+
+process.e = cms.EndPath(process.out * process.outnano)
 
 
 # process.out = cms.OutputModule("PoolOutputModule",
