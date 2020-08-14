@@ -70,7 +70,6 @@ void L1Analysis::L1AnalysisPhaseIPFJet::SetPhaseIPFJetSums  (const edm::Handle< 
 
     else if ( sumType == l1t::EtSum::kMissingHt){
       l1extra_.phaseIPFJetMHT = sumItr->pt();
-      std::cout << "phaseIPFJetMHT:  " << l1extra_.phaseIPFJetMHT << std::endl;
     }
   } 
 }
@@ -96,7 +95,6 @@ void L1Analysis::L1AnalysisPhaseIPFJet::SetPFJet(const edm::Handle< vector<l1t::
     }
   }
   l1extra_.ak4PFJetMHT = myLorentzVector.pt();
-  std::cout << "ak4PFJetMHT:  " << l1extra_.ak4PFJetMHT << std::endl;
 }
 
 void L1Analysis::L1AnalysisPhaseIPFJet::SetPFMET(const edm::Handle<reco::PFMETCollection> pfMET)
@@ -114,10 +112,8 @@ void L1Analysis::L1AnalysisPhaseIPFJet::SetGenJet(const edm::Handle<reco::GenJet
   for( ; genJetItr != genJetEnd ; ++genJetItr) {
     
     if(genJetItr->pt()>30 && abs(genJetItr->eta())<2.4){
-      l1extra_.genJetHt += genJetItr->pt();
-      //std::cout << "Gen jet : " << genJetItr->pt() << " " << genJetItr->px() << " " << genJetItr->p4() << " " << genJetItr->p4().pt() << std::endl;  
+      l1extra_.genJetHt += genJetItr->pt();  
     
-
       myLorentzVector += genJetItr->p4();
     }
     l1extra_.genJetPt.push_back( genJetItr->pt() );
@@ -129,8 +125,6 @@ void L1Analysis::L1AnalysisPhaseIPFJet::SetGenJet(const edm::Handle<reco::GenJet
   }
   l1extra_.genJetMHT = myLorentzVector.pt(); 
  
-  //std::cout << "myLorentzVector : " << myLorentzVector << std::endl;
-  std::cout << "genJetMHT:  " << l1extra_.genJetMHT << std::endl;
 }
 
 void L1Analysis::L1AnalysisPhaseIPFJet::SetGenMET(const edm::Handle<reco::GenMETCollection> genMET)
